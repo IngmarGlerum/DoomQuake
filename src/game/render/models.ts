@@ -1,0 +1,153 @@
+import * as THREE from 'three'
+import type { EnemyKind } from '../level/types'
+
+/**
+ * Low-poly "Quake-achtige" placeholder-modellen, opgebouwd uit primitieven met nep-
+ * belichting in vertexkleuren. Later te vervangen door echte glTF-modellen
+ * (bijv. Quaternius / Kenney, CC0).
+ */
+const LIGHT_DIR = new THREE.Vector3(0.4, 0.85, 0.35).normalize()
+
+function shaded(geometry: THREE.BufferGeometry, color: number): THREE.BufferGeometry {
+  const g = geometry.index ? geometry.toNonIndexed() : geometry
+  g.computeVertexNormals()
+  const n = g.getAttribute('normal')
+  const base = new THREE.Color(color)
+  const colors = new Float32Array(n.count * 3)
+  const v = new THREE.Vector3()
+  for (let i = 0; i < n.count; i++) {
+    v.fromBufferAttribute(n, i)
+    const f = 0.45 + 0.55 * Math.max(0, v.dot(LIGHT_DIR))
+    colors[i * 3] = base.r * f
+    colors[i * 3 + 1] = base.g * f
+    colors[i * 3 + 2] = base.b * f
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  return g
+}
+
+type Part = { geo: THREE.BufferGeometry; color: number; pos: [number, number, number]; rot?: [number, number, number] }
+
+const box = (w: number, h: number, d: number) => new THREE.BoxGeometry(w, h, d)
+const cone = (r: number, h: number) => new THREE.ConeGeometry(r, h, 5)
+const cyl = (r: number, h: number) => new THREE.CylinderGeometry(r, r, h, 6)
+
+function merge(parts: Part[]): THREE.BufferGeometry {
+  const geos = parts.map((p) => {
+    const g = shaded(p.geo, p.color)
+    const m = new THREE.Matrix4().compose(
+      new THREE.Vector3(...p.pos),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(...(p.rot ?? [0, 0, 0]))),
+      new THREE.Vector3(1, 1, 1),
+    )
+    g.applyMatrix4(m)
+    return g
+  })
+  const total = geos.reduce((n, g) => n + g.getAttribute('position').count, 0)
+  const pos = new Float32Array(total * 3)
+  const col = new Float32Array(total * 3)
+  let o = 0
+  for (const g of geos) {
+    pos.set(g.getAttribute('position').array as Float32Array, o * 3)
+    col.set(g.getAttribute('color').array as Float32Array, o * 3)
+    o += g.getAttribute('position').count
+  }
+  const out = new THREE.BufferGeometry()
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  out.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  out.computeBoundingSphere()
+  return out
+}
+
+const ENEMY_PARTS: Record<EnemyKind, () => Part[]> = {
+  // soldaat met helm en geweer
+  grunt: () => [
+    { geo: box(0.24, 0.85, 0.26), color: 0x3d4a2a, pos: [-0.15, 0.43, 0] },
+    { geo: box(0.24, 0.85, 0.26), color: 0x3d4a2a, pos: [0.15, 0.43, 0] },
+    { geo: box(0.62, 0.7, 0.36), color: 0x5f6b3a, pos: [0, 1.2, 0] },
+    { geo: box(0.3, 0.3, 0.3), color: 0xc89070, pos: [0, 1.72, 0] },
+    { geo: box(0.36, 0.14, 0.36), color: 0x2f3a22, pos: [0, 1.88, 0] },
+    { geo: box(0.17, 0.62, 0.2), color: 0x5f6b3a, pos: [-0.4, 1.2, -0.08], rot: [-0.5, 0, 0] },
+    { geo: box(0.17, 0.62, 0.2), color: 0x5f6b3a, pos: [0.4, 1.2, -0.08], rot: [-0.5, 0, 0] },
+    { geo: box(0.1, 0.12, 0.8), color: 0x222222, pos: [0.15, 1.05, -0.45] },
+  ],
+  // gebogen, gespierd wezen met hoorns en klauwen
+  imp: () => [
+    { geo: box(0.26, 0.8, 0.3), color: 0x6a4a30, pos: [-0.18, 0.4, 0.05] },
+    { geo: box(0.26, 0.8, 0.3), color: 0x6a4a30, pos: [0.18, 0.4, 0.05] },
+    { geo: box(0.75, 0.8, 0.45), color: 0x8a6040, pos: [0, 1.2, -0.05], rot: [0.25, 0, 0] },
+    { geo: box(0.36, 0.34, 0.36), color: 0x7a5236, pos: [0, 1.75, -0.22] },
+    { geo: cone(0.06, 0.3), color: 0xe0d0b0, pos: [-0.14, 2.0, -0.2], rot: [0, 0, 0.4] },
+    { geo: cone(0.06, 0.3), color: 0xe0d0b0, pos: [0.14, 2.0, -0.2], rot: [0, 0, -0.4] },
+    { geo: cone(0.09, 0.3), color: 0xe0d0b0, pos: [-0.42, 1.6, 0], rot: [0, 0, 0.9] },
+    { geo: cone(0.09, 0.3), color: 0xe0d0b0, pos: [0.42, 1.6, 0], rot: [0, 0, -0.9] },
+    { geo: box(0.2, 0.75, 0.22), color: 0x7a5236, pos: [-0.5, 1.1, -0.15], rot: [-0.6, 0, 0.15] },
+    { geo: box(0.2, 0.75, 0.22), color: 0x7a5236, pos: [0.5, 1.1, -0.15], rot: [-0.6, 0, -0.15] },
+    { geo: box(0.08, 0.06, 0.06), color: 0xffaa00, pos: [-0.08, 1.8, -0.41] },
+    { geo: box(0.08, 0.06, 0.06), color: 0xffaa00, pos: [0.08, 1.8, -0.41] },
+  ],
+  // lomp, roze "pinky"-achtig beest met grote kaak
+  demon: () => [
+    { geo: box(0.32, 0.6, 0.36), color: 0x8a4050, pos: [-0.38, 0.3, 0.2] },
+    { geo: box(0.32, 0.6, 0.36), color: 0x8a4050, pos: [0.38, 0.3, 0.2] },
+    { geo: box(1.15, 0.9, 1.25), color: 0xc06070, pos: [0, 1.0, 0.05] },
+    { geo: box(0.85, 0.5, 0.6), color: 0xb05060, pos: [0, 1.2, -0.75] },
+    { geo: box(0.8, 0.22, 0.55), color: 0x903848, pos: [0, 0.82, -0.72], rot: [0.25, 0, 0] },
+    { geo: cone(0.05, 0.16), color: 0xf0f0e0, pos: [-0.25, 1.0, -1.0], rot: [Math.PI, 0, 0] },
+    { geo: cone(0.05, 0.16), color: 0xf0f0e0, pos: [0, 1.0, -1.02], rot: [Math.PI, 0, 0] },
+    { geo: cone(0.05, 0.16), color: 0xf0f0e0, pos: [0.25, 1.0, -1.0], rot: [Math.PI, 0, 0] },
+    { geo: box(0.1, 0.08, 0.06), color: 0xff3020, pos: [-0.2, 1.35, -1.06] },
+    { geo: box(0.1, 0.08, 0.06), color: 0xff3020, pos: [0.2, 1.35, -1.06] },
+  ],
+}
+
+const cache = new Map<string, THREE.BufferGeometry>()
+const cached = (key: string, build: () => THREE.BufferGeometry) => {
+  if (!cache.has(key)) cache.set(key, build())
+  return cache.get(key)!
+}
+
+export const enemyGeometry = (kind: EnemyKind) => cached(`enemy-${kind}`, () => merge(ENEMY_PARTS[kind]()))
+
+export const pickupGeometry = {
+  health: () =>
+    cached('health', () =>
+      merge([
+        { geo: box(0.5, 0.3, 0.4), color: 0xe8e8e8, pos: [0, 0.15, 0] },
+        { geo: box(0.3, 0.02, 0.1), color: 0xd01010, pos: [0, 0.31, 0] },
+        { geo: box(0.1, 0.02, 0.3), color: 0xd01010, pos: [0, 0.31, 0] },
+      ]),
+    ),
+  ammo: () =>
+    cached('ammo', () =>
+      merge([
+        { geo: box(0.5, 0.25, 0.3), color: 0x8a2a1a, pos: [0, 0.125, 0] },
+        { geo: box(0.5, 0.04, 0.3), color: 0xd8b020, pos: [0, 0.27, 0] },
+      ]),
+    ),
+  armor: () =>
+    cached('armor', () =>
+      merge([
+        { geo: box(0.6, 0.65, 0.22), color: 0x2a8a3a, pos: [0, 0.33, 0] },
+        { geo: box(0.2, 0.65, 0.24), color: 0x50c060, pos: [0, 0.33, 0] },
+      ]),
+    ),
+  key: () =>
+    cached('key', () =>
+      merge([
+        { geo: box(0.32, 0.46, 0.05), color: 0xff2020, pos: [0, 0, 0] },
+        { geo: box(0.32, 0.08, 0.06), color: 0xffffff, pos: [0, 0.12, 0] },
+      ]),
+    ),
+}
+
+export const shotgunGeometry = () =>
+  cached('shotgun', () =>
+    merge([
+      { geo: cyl(0.035, 0.75), color: 0x505560, pos: [-0.04, 0, -0.38], rot: [Math.PI / 2, 0, 0] },
+      { geo: cyl(0.035, 0.75), color: 0x505560, pos: [0.04, 0, -0.38], rot: [Math.PI / 2, 0, 0] },
+      { geo: box(0.14, 0.1, 0.3), color: 0x6a4a2a, pos: [0, -0.06, -0.3] },
+      { geo: box(0.13, 0.13, 0.25), color: 0x3a3e46, pos: [0, -0.02, 0.0] },
+      { geo: box(0.12, 0.16, 0.35), color: 0x5a3a20, pos: [0, -0.1, 0.25], rot: [-0.2, 0, 0] },
+    ]),
+  )
