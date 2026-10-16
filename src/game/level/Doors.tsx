@@ -1,8 +1,9 @@
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { sfx } from '../audio'
+import { runtime } from '../combat/runtime'
 import type { Lighting } from '../render/lighting'
 import { getTextures } from '../render/textures'
 import { player, useGame } from '../store'
@@ -26,6 +27,9 @@ export function Doors({ level, lighting }: { level: Level; lighting: Lighting })
   )
   // één gedeeld "deurgeluid/melding"-moment voor alle deurcellen
   const shared = useRef({ opening: false, deniedAt: 0 })
+  useEffect(() => {
+    runtime.doorsOpen = false
+  }, [level])
 
   useFrame(() => {
     const near = doors.some((d) => Math.hypot(player.position.x - d.x, player.position.z - d.z) < OPEN_DISTANCE)
@@ -33,7 +37,8 @@ export function Doors({ level, lighting }: { level: Level; lighting: Lighting })
     const game = useGame.getState()
     if (game.hasKey) {
       shared.current.opening = true
-      sfx.door()
+      runtime.doorsOpen = true
+      sfx.door(doors[0])
     } else if (performance.now() - shared.current.deniedAt > 2500) {
       shared.current.deniedAt = performance.now()
       game.say('Je hebt de rode sleutel nodig om deze deur te openen')

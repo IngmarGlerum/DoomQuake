@@ -16,7 +16,8 @@ npm test         # generator-tests (determinisme + speelbaarheid over 150 seeds)
 npm run build
 ```
 
-**Besturing:** WASD/pijltjes lopen · muis kijken · klik schieten · spatie springen (ingedrukt houden = bunnyhop) ·
+**Besturing:** WASD/pijltjes lopen · muis kijken · klik schieten (machine gun: ingedrukt houden) ·
+1/2/3 of scrollwiel: heavy pistol / shotgun / machine gun · spatie springen (ingedrukt houden = bunnyhop) ·
 M kaart · N noclip · G nieuw level · Esc pauze.
 
 **Doel:** vind de rode sleutel, open de rode deur en bereik de EXIT.
@@ -35,7 +36,19 @@ M kaart · N noclip · G nieuw level · Esc pauze.
 - **Quake-achtige movement**: grondwrijving, acceleratie, air strafing en bunnyhop, met een vaste tijdstap van 120 Hz
   en Rapier character controller (autostep voor trappen)
 - Low-res rendering (300px hoog, pixelig opgeschaald) + fog
-- Low-poly placeholder-vijanden (grunt, imp, demon), pickups, sleutel, deuren, exit, HUD, automap
+- **Wapens** (`src/game/combat/weapons.ts`): heavy pistol, shotgun (8 hagels) en machine gun (automatisch),
+  hitscan via Rapier-raycasts, terugslag, view punch en twee munitiesoorten (bullets/shells)
+- **Effecten** (`src/game/combat/Effects.tsx`): gloeiende lichtsporen, vonken, stof, bloed, kogelgaten, inslagflitsen
+  en explosies, allemaal uit vaste pools
+- **Vijand-AI** (`src/game/enemies/`): idle → wakker (zien of schoten horen) → achtervolgen via een gedeeld
+  flow field → aanvallen → pijn → dood
+  - grunt: hitscan-geweer (minder raak op afstand en als je rent)
+  - imp: vuurballen die je kunt ontwijken
+  - demon: snel, valt aan met een beet
+- Positionele audio: volume op afstand en stereo-panning t.o.v. je kijkrichting
+- HUD met wapenminiaturen (offscreen gerenderd uit de 3D-modellen), geselecteerd wapen gehighlight, kills-teller
+  en een rode flits bij schade
+- Low-poly placeholder-vijanden (grunt, imp, demon), pickups, sleutel, deuren, exit, automap
 - Gesynthetiseerde geluidseffecten (WebAudio), dus geen audiobestanden nodig
 
 ## Architectuur
@@ -44,6 +57,8 @@ M kaart · N noclip · G nieuw level · Esc pauze.
 src/
   game/
     level/    generator, validatie, level-mesh, deuren, things
+    combat/   wapendefinities, raycasts/runtime, effecten
+    enemies/  AI, flow-field pathfinding, projectielen
     player/   input, movement (Quake-fysica), Player-controller, wapen-viewmodel
     render/   textures, belichting, geometrie-builder, low-poly modellen
     store.ts  zustand: HUD/game-state (+ mutable `player` voor per-frame data)
@@ -59,8 +74,8 @@ om gegenereerde levels te inspecteren.
 
 ## Volgende stappen
 
-1. Schieten met hitscan-raycasts + vijanden die schade krijgen en doodgaan
-2. Vijand-AI (idle → chase → attack → pain → dead) met line-of-sight en grid-pathfinding
-3. Projectielen (imp-fireballs) en meer wapens (chaingun, rocket launcher)
-4. Echte low-poly modellen (glTF) en samples in plaats van de placeholders
-5. Meer generator-variatie: liften, secrets, ramen tussen kamers, buitenruimtes met lucht
+1. Rocket launcher met splash damage (en rocket jumps)
+2. Wapens als pickups in het level in plaats van alles vanaf de start
+3. Echte low-poly modellen (glTF) met animaties en samples in plaats van de placeholders
+4. Meer generator-variatie: liften, secrets, ramen tussen kamers, buitenruimtes met lucht
+5. Balancing: aantal vijanden per kamer, munitie en health over het level

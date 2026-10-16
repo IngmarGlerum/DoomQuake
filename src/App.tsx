@@ -2,6 +2,9 @@ import { PointerLockControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Effects } from './game/combat/Effects'
+import { Enemies } from './game/enemies/Enemies'
+import { Projectiles } from './game/enemies/Projectiles'
 import { Doors } from './game/level/Doors'
 import { generateLevel } from './game/level/generate'
 import { LevelMesh } from './game/level/LevelMesh'
@@ -64,9 +67,12 @@ export default function App() {
             <LevelMesh level={level} lighting={lighting} />
             <Doors level={level} lighting={lighting} />
             <Player level={level} />
+            <Enemies level={level} lighting={lighting} />
+            <Projectiles />
+            <Weapon lighting={lighting} />
           </Physics>
           <Things level={level} lighting={lighting} />
-          <Weapon lighting={lighting} />
+          <Effects />
         </Suspense>
         <PointerLockControls
           onLock={() => useGame.getState().setLocked(true)}

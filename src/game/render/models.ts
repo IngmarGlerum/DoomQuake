@@ -151,3 +151,28 @@ export const shotgunGeometry = () =>
       { geo: box(0.12, 0.16, 0.35), color: 0x5a3a20, pos: [0, -0.1, 0.25], rot: [-0.2, 0, 0] },
     ]),
   )
+
+export const pistolGeometry = () =>
+  cached('pistol', () =>
+    merge([
+      { geo: box(0.075, 0.09, 0.34), color: 0x3a3e46, pos: [0, 0.02, -0.15] },
+      { geo: box(0.08, 0.025, 0.3), color: 0x5a606a, pos: [0, 0.075, -0.15] },
+      { geo: cyl(0.022, 0.06), color: 0x222428, pos: [0, 0.02, -0.34], rot: [Math.PI / 2, 0, 0] },
+      { geo: box(0.07, 0.2, 0.1), color: 0x4a3020, pos: [0, -0.1, 0.0], rot: [0.28, 0, 0] },
+      { geo: box(0.02, 0.05, 0.08), color: 0x2a2c30, pos: [0, -0.05, -0.08] },
+      { geo: box(0.02, 0.025, 0.02), color: 0xd0d0d0, pos: [0, 0.1, -0.29] },
+    ]),
+  )
+
+export const machinegunGeometry = () =>
+  cached('machinegun', () =>
+    merge([
+      { geo: box(0.1, 0.13, 0.52), color: 0x30343a, pos: [0, 0, -0.12] },
+      { geo: cyl(0.05, 0.3), color: 0x22252a, pos: [0, 0.01, -0.5], rot: [Math.PI / 2, 0, 0] },
+      { geo: cyl(0.022, 0.5), color: 0x50555e, pos: [0, 0.01, -0.62], rot: [Math.PI / 2, 0, 0] },
+      { geo: box(0.06, 0.22, 0.09), color: 0x26282c, pos: [0, -0.16, -0.18], rot: [-0.2, 0, 0] },
+      { geo: box(0.04, 0.06, 0.26), color: 0x3a3e46, pos: [0, 0.1, -0.14] },
+      { geo: box(0.08, 0.14, 0.3), color: 0x4a3020, pos: [0, -0.04, 0.27], rot: [-0.12, 0, 0] },
+      { geo: box(0.07, 0.15, 0.08), color: 0x4a3020, pos: [0, -0.13, 0.06], rot: [0.3, 0, 0] },
+    ]),
+  )

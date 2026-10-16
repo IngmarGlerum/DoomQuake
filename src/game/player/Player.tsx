@@ -4,6 +4,7 @@ import type { Collider, KinematicCharacterController } from '@dimforge/rapier3d-
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { sfx } from '../audio'
+import { runtime } from '../combat/runtime'
 import { CELL, type Level } from '../level/types'
 import { player, useGame } from '../store'
 import { readMoveInput } from './input'
@@ -45,6 +46,9 @@ export function Player({ level }: { level: Level }) {
     controller.setMaxSlopeClimbAngle((50 * Math.PI) / 180)
     controller.setSlideEnabled(true)
     body.current = { collider, controller }
+    runtime.world = world
+    runtime.rapier = rapier
+    runtime.playerCollider = collider
 
     const s = sim.current
     s.cur.set(spawn.x, spawn.y + CENTER_TO_FEET + 0.05, spawn.z)
@@ -58,6 +62,7 @@ export function Player({ level }: { level: Level }) {
       Object.assign(window, {
         __level: level,
         __player: player,
+        __game: useGame,
         __teleport: (x: number, y: number, z: number, yaw = 0, pitch = 0) => {
           s.cur.set(x, y + CENTER_TO_FEET + 0.05, z)
           s.prev.copy(s.cur)
@@ -69,6 +74,7 @@ export function Player({ level }: { level: Level }) {
 
     return () => {
       body.current = null
+      if (runtime.playerCollider === collider) runtime.playerCollider = null
       try {
         world.removeCharacterController(controller)
         world.removeCollider(collider, false)

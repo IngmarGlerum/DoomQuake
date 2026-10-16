@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { sfx } from '../audio'
 import type { Lighting } from '../render/lighting'
-import { enemyGeometry, pickupGeometry } from '../render/models'
+import { pickupGeometry } from '../render/models'
 import { getTextures } from '../render/textures'
 import { player, useGame } from '../store'
 import type { Level, Thing } from './types'
@@ -17,7 +17,7 @@ export function Things({ level, lighting }: { level: Level; lighting: Lighting }
       {level.things.map((t, i) => {
         switch (t.kind) {
           case 'enemy':
-            return <Enemy key={i} thing={t} lighting={lighting} />
+            return null // zie enemies/Enemies.tsx
           case 'key':
             return <Key key={i} thing={t} />
           case 'exit':
@@ -32,33 +32,6 @@ export function Things({ level, lighting }: { level: Level; lighting: Lighting }
 
 const useTint = (lighting: Lighting, t: Thing) =>
   useMemo(() => new THREE.Color(...lighting.sample(t.x, t.y + 1, t.z)), [lighting, t])
-
-/** Vijanden zijn voorlopig nog statisch: ze draaien alleen naar je toe. */
-function Enemy({ thing, lighting }: { thing: Thing; lighting: Lighting }) {
-  const ref = useRef<THREE.Mesh>(null)
-  const tint = useTint(lighting, thing)
-  const phase = (thing.x * 7.13 + thing.z * 3.71) % (Math.PI * 2)
-
-  useFrame(({ clock }) => {
-    const m = ref.current
-    if (!m) return
-    const dx = player.position.x - thing.x
-    const dz = player.position.z - thing.z
-    if (dx * dx + dz * dz < 25 * 25) {
-      const target = Math.atan2(-dx, -dz)
-      let diff = target - m.rotation.y
-      diff = Math.atan2(Math.sin(diff), Math.cos(diff))
-      m.rotation.y += diff * 0.05
-    }
-    m.position.y = thing.y + Math.abs(Math.sin(clock.elapsedTime * 2 + phase)) * 0.03
-  })
-
-  return (
-    <mesh ref={ref} geometry={enemyGeometry(thing.enemy ?? 'grunt')} position={[thing.x, thing.y, thing.z]}>
-      <meshBasicMaterial vertexColors color={tint} />
-    </mesh>
-  )
-}
 
 function Pickup({ thing, lighting }: { thing: Thing; lighting: Lighting }) {
   const kind = thing.kind as 'health' | 'ammo' | 'armor'

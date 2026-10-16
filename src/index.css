@@ -82,14 +82,87 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: 22px;
   background: repeating-linear-gradient(90deg, #4a4a4a 0 2px, #3c3c3c 2px 6px);
   border-top: 4px solid #6a6a6a;
 }
 
 .stat {
   text-align: center;
-  min-width: 110px;
+  min-width: 96px;
+}
+
+.weapons {
+  display: flex;
+  gap: 6px;
+}
+
+.slot {
+  position: relative;
+  width: 92px;
+  height: 64px;
+  background: #1c1c1c;
+  border: 3px solid #4a4a4a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot img {
+  width: 84px;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 #000);
+  opacity: 0.55;
+}
+
+.slot.selected {
+  border-color: #ffd040;
+  background: #2e2610;
+  box-shadow: 0 0 10px #ffb000, inset 0 0 12px rgba(255, 190, 0, 0.35);
+}
+
+.slot.selected img {
+  opacity: 1;
+}
+
+.slot.empty img {
+  filter: grayscale(1) brightness(0.5);
+}
+
+.slot-key {
+  position: absolute;
+  top: -2px;
+  left: 4px;
+  font-size: 20px;
+  color: #ffd040;
+}
+
+.slot:not(.selected) .slot-key {
+  color: #888;
+}
+
+.slot-ammo {
+  position: absolute;
+  bottom: -3px;
+  right: 4px;
+  font-size: 18px;
+  color: #c8c8c8;
+}
+
+.hurt-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255, 0, 0, 0.15) 30%, rgba(200, 0, 0, 0.55));
+  animation: hurt 0.45s ease-out forwards;
+}
+
+@keyframes hurt {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .stat .value {

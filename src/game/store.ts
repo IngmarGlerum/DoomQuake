@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { create } from 'zustand'
+import { AMMO_MAX, WEAPONS, type AmmoType } from './combat/weapons'
 import { randomSeed } from './rng'
 
 export type Status = 'playing' | 'won' | 'dead'
@@ -13,7 +14,13 @@ interface GameState {
   hasKey: boolean
   health: number
   armor: number
-  ammo: number
+  ammo: Record<AmmoType, number>
+  /** index in WEAPONS */
+  weapon: number
+  kills: number
+  enemies: number
+  /** tijdstip van laatste schade (voor de rode flits) */
+  hurtAt: number
   message: string
   messageAt: number
   locked: boolean
@@ -26,7 +33,11 @@ interface GameState {
   pickup(kind: PickupKind): boolean
   takeKey(): void
   damage(amount: number): void
-  fire(): boolean
+  /** verbruikt munitie voor het huidige wapen; false als leeg */
+  useAmmo(): boolean
+  selectWeapon(index: number): boolean
+  setEnemyCount(n: number): void
+  addKill(): void
   win(): void
   setLocked(locked: boolean): void
   toggleMap(): void
@@ -35,12 +46,24 @@ interface GameState {
 
 const initialSeed = new URLSearchParams(window.location.search).get('seed') || randomSeed()
 
-const fresh = { status: 'playing' as Status, hasKey: false, health: 100, armor: 0, ammo: 25, message: '', messageAt: 0 }
+const fresh = () => ({
+  status: 'playing' as Status,
+  hasKey: false,
+  health: 100,
+  armor: 0,
+  ammo: { bullets: 60, shells: 12 },
+  weapon: 0,
+  kills: 0,
+  enemies: 0,
+  hurtAt: -1e9,
+  message: '',
+  messageAt: 0,
+})
 
 export const useGame = create<GameState>()((set, get) => ({
   seed: initialSeed,
   run: 0,
-  ...fresh,
+  ...fresh(),
   locked: false,
   showMap: true,
   noclip: false,
@@ -49,10 +72,10 @@ export const useGame = create<GameState>()((set, get) => ({
     const url = new URL(window.location.href)
     url.searchParams.set('seed', seed)
     window.history.replaceState(null, '', url)
-    set((s) => ({ ...fresh, seed, run: s.run + 1 }))
+    set((s) => ({ ...fresh(), seed, run: s.run + 1 }))
   },
   restart() {
-    set((s) => ({ ...fresh, run: s.run + 1 }))
+    set((s) => ({ ...fresh(), run: s.run + 1 }))
   },
   say(message) {
     set({ message, messageAt: performance.now() })
@@ -68,8 +91,14 @@ export const useGame = create<GameState>()((set, get) => ({
       set({ armor: Math.min(100, s.armor + 50) })
       s.say('Armor opgepakt')
     } else {
-      set({ ammo: Math.min(99, s.ammo + 8) })
-      s.say('Shells opgepakt')
+      if (s.ammo.bullets >= AMMO_MAX.bullets && s.ammo.shells >= AMMO_MAX.shells) return false
+      set({
+        ammo: {
+          bullets: Math.min(AMMO_MAX.bullets, s.ammo.bullets + 30),
+          shells: Math.min(AMMO_MAX.shells, s.ammo.shells + 6),
+        },
+      })
+      s.say('Munitie opgepakt')
     }
     return true
   },
@@ -82,13 +111,25 @@ export const useGame = create<GameState>()((set, get) => ({
     if (s.status !== 'playing' || get().noclip) return
     const absorbed = Math.min(s.armor, amount / 3)
     const health = Math.max(0, s.health - (amount - absorbed))
-    set({ armor: s.armor - absorbed, health, status: health <= 0 ? 'dead' : s.status })
+    set({ armor: s.armor - absorbed, health, hurtAt: performance.now(), status: health <= 0 ? 'dead' : s.status })
   },
-  fire() {
+  useAmmo() {
     const s = get()
-    if (s.ammo <= 0 || s.status !== 'playing') return false
-    set({ ammo: s.ammo - 1 })
+    const type = WEAPONS[s.weapon].ammo
+    if (s.ammo[type] <= 0 || s.status !== 'playing') return false
+    set({ ammo: { ...s.ammo, [type]: s.ammo[type] - 1 } })
     return true
+  },
+  selectWeapon(index) {
+    if (index < 0 || index >= WEAPONS.length || index === get().weapon) return false
+    set({ weapon: index })
+    return true
+  },
+  setEnemyCount(enemies) {
+    set({ enemies, kills: 0 })
+  },
+  addKill() {
+    set((s) => ({ kills: s.kills + 1 }))
   },
   win() {
     if (get().status === 'playing') set({ status: 'won' })
