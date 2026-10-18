@@ -1,12 +1,6 @@
 import * as THREE from 'three'
 import type { WeaponId } from '../combat/weapons'
-import { machinegunGeometry, pistolGeometry, shotgunGeometry } from './models'
-
-const GEOMETRY: Record<WeaponId, () => THREE.BufferGeometry> = {
-  pistol: pistolGeometry,
-  shotgun: shotgunGeometry,
-  machinegun: machinegunGeometry,
-}
+import { weaponGeometry as GEOMETRY } from './models'
 
 let icons: Record<WeaponId, string> | null = null
 

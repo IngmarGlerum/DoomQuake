@@ -11,8 +11,10 @@ import type { Lighting, RGB } from '../render/lighting'
 import { enemyGeometry } from '../render/models'
 import { player, useGame } from '../store'
 import { computeFlowField, nextStep } from './flowField'
+import { damageEnemy, wake } from './damage'
 import { spawnFireball } from './Projectiles'
 import { ENEMY_DEFS, type EnemyState } from './types'
+
 
 const SIGHT_RANGE = 42
 const HEARING_RANGE = 24
@@ -24,48 +26,6 @@ const tmpC = new THREE.Vector3()
 
 const eye = (e: EnemyState, out: THREE.Vector3) => out.set(e.pos.x, e.pos.y + e.def.height * 0.82, e.pos.z)
 const playerChest = (out: THREE.Vector3) => out.set(player.position.x, player.position.y + 1.1, player.position.z)
-
-/** Vijand neemt schade (aangeroepen door de wapens). */
-export function damageEnemy(e: EnemyState, amount: number, point: THREE.Vector3, dir: THREE.Vector3) {
-  if (e.state === 'dead') return
-  e.hp -= amount
-  e.hitFlash = 1
-  fx.fleshImpact(point, dir, Math.min(2, amount / 10))
-  // een beetje terugduwen
-  e.pos.addScaledVector(tmpA.set(dir.x, 0, dir.z).normalize(), Math.min(0.25, amount * 0.01))
-
-  if (e.hp <= 0) {
-    e.state = 'dead'
-    e.stateTime = 0
-    fx.fleshImpact(point, dir, 3)
-    sfx.death(e.pos)
-    useGame.getState().addKill()
-    if (e.collider && runtime.world) {
-      runtime.enemyByCollider.delete(e.collider.handle)
-      try {
-        runtime.world.removeCollider(e.collider, false)
-      } catch {
-        // wereld al opgeruimd
-      }
-      e.collider = null
-    }
-    return
-  }
-  if (e.state === 'idle') wake(e)
-  if (Math.random() < e.def.painChance) {
-    e.state = 'pain'
-    e.stateTime = 0
-    sfx.pain(e.pos)
-  }
-}
-
-function wake(e: EnemyState) {
-  e.state = 'chase'
-  e.stateTime = 0
-  e.cooldown = rand(0.3, 1.0)
-  if (e.kind === 'grunt') sfx.alert(e.pos)
-  else sfx.growl(e.pos)
-}
 
 export function Enemies({ level, lighting }: { level: Level; lighting: Lighting }) {
   const { world, rapier } = useRapier()

@@ -119,6 +119,11 @@ export const sfx = {
     noise(o, 0.11, 5000, 400, 0.6)
     tone(o, 'square', 220, 70, 0.06, 0.25)
   }),
+  rocket: sound(1, (o) => {
+    noise(o, 0.6, 300, 1800, 0.5, 'bandpass')
+    noise(o, 0.25, 1500, 150, 0.6)
+    tone(o, 'sawtooth', 90, 40, 0.3, 0.25)
+  }),
   click: sound(0.6, (o) => tone(o, 'square', 900, 700, 0.04, 0.1)),
   weaponSwitch: sound(0.5, (o) => {
     noise(o, 0.06, 2500, 1500, 0.3, 'bandpass')
@@ -137,6 +142,12 @@ export const sfx = {
   explosion: sound(1, (o) => {
     noise(o, 0.7, 1800, 60, 0.9)
     tone(o, 'sawtooth', 90, 30, 0.5, 0.25)
+  }),
+  bigExplosion: sound(1.3, (o) => {
+    noise(o, 1.2, 2500, 40, 1)
+    noise(o, 0.15, 6000, 1000, 0.6, 'highpass')
+    tone(o, 'sawtooth', 70, 22, 0.9, 0.4)
+    tone(o, 'sine', 50, 25, 1.0, 0.5)
   }),
 
   // vijanden

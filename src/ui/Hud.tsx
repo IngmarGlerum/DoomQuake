@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { WEAPONS } from '../game/combat/weapons'
+import { AMMO_LABEL, WEAPONS } from '../game/combat/weapons'
 import type { Level } from '../game/level/types'
 import { getWeaponIcons } from '../game/render/weaponIcons'
 import { useGame } from '../game/store'
@@ -37,7 +37,7 @@ export function Hud({ level }: { level: Level }) {
             </div>
           ))}
         </div>
-        <Stat label={current.ammo === 'shells' ? 'SHELLS' : 'BULLETS'} value={ammo[current.ammo]} warn={ammo[current.ammo] <= 3} />
+        <Stat label={AMMO_LABEL[current.ammo]} value={ammo[current.ammo]} warn={ammo[current.ammo] <= 3} />
         <Stat label="HEALTH" value={`${Math.ceil(health)}%`} warn={health < 30} />
         <div className="face">{health > 60 ? '😠' : health > 25 ? '😣' : '😵'}</div>
         <Stat label="ARMOR" value={`${Math.floor(armor)}%`} />
@@ -57,7 +57,7 @@ export function Hud({ level }: { level: Level }) {
               <tr><td>WASD / pijltjes</td><td>lopen</td></tr>
               <tr><td>muis</td><td>rondkijken</td></tr>
               <tr><td>klik</td><td>schieten (machine gun: ingedrukt houden)</td></tr>
-              <tr><td>1 / 2 / 3, scrollwiel</td><td>heavy pistol / shotgun / machine gun</td></tr>
+              <tr><td>1 / 2 / 3 / 4, scrollwiel</td><td>heavy pistol / shotgun / machine gun / rocket launcher</td></tr>
               <tr><td>spatie</td><td>springen (houd ingedrukt om te bunnyhoppen)</td></tr>
               <tr><td>M</td><td>kaart aan/uit</td></tr>
               <tr><td>N</td><td>noclip (vrij vliegen, spatie/C = omhoog/omlaag)</td></tr>

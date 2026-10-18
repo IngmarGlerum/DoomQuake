@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import type { WeaponId } from '../combat/weapons'
 import type { EnemyKind } from '../level/types'
 
 /**
@@ -176,3 +177,36 @@ export const machinegunGeometry = () =>
       { geo: box(0.07, 0.15, 0.08), color: 0x4a3020, pos: [0, -0.13, 0.06], rot: [0.3, 0, 0] },
     ]),
   )
+
+export const rocketLauncherGeometry = () =>
+  cached('rocket', () =>
+    merge([
+      // grote buis met een donkere mond en een verdikte achterkant
+      { geo: cyl(0.075, 0.95), color: 0x4a5a3a, pos: [0, 0.02, -0.28], rot: [Math.PI / 2, 0, 0] },
+      { geo: cyl(0.085, 0.12), color: 0x2a2e22, pos: [0, 0.02, -0.72], rot: [Math.PI / 2, 0, 0] },
+      { geo: cyl(0.09, 0.16), color: 0x3a4430, pos: [0, 0.02, 0.18], rot: [Math.PI / 2, 0, 0] },
+      { geo: box(0.04, 0.05, 0.6), color: 0xc8a020, pos: [0, -0.05, -0.28] },
+      // vizier, handgreep en trekker
+      { geo: box(0.03, 0.09, 0.05), color: 0x202020, pos: [0, 0.12, -0.5] },
+      { geo: box(0.05, 0.06, 0.12), color: 0x202020, pos: [0, 0.11, -0.05] },
+      { geo: box(0.06, 0.18, 0.08), color: 0x3a2818, pos: [0, -0.12, -0.02], rot: [0.25, 0, 0] },
+      { geo: box(0.06, 0.15, 0.07), color: 0x3a2818, pos: [0, -0.1, -0.4], rot: [0.15, 0, 0] },
+    ]),
+  )
+
+export const rocketGeometry = () =>
+  cached('rocket-projectile', () =>
+    merge([
+      { geo: cyl(0.06, 0.45), color: 0x8a8a7a, pos: [0, 0, 0], rot: [Math.PI / 2, 0, 0] },
+      { geo: cone(0.065, 0.18), color: 0xc03020, pos: [0, 0, -0.31], rot: [-Math.PI / 2, 0, 0] },
+      { geo: box(0.2, 0.02, 0.1), color: 0x505048, pos: [0, 0, 0.2] },
+      { geo: box(0.02, 0.2, 0.1), color: 0x505048, pos: [0, 0, 0.2] },
+    ]),
+  )
+
+export const weaponGeometry: Record<WeaponId, () => THREE.BufferGeometry> = {
+  pistol: pistolGeometry,
+  shotgun: shotgunGeometry,
+  machinegun: machinegunGeometry,
+  rocket: rocketLauncherGeometry,
+}

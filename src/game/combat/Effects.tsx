@@ -12,7 +12,7 @@ import * as THREE from 'three'
 const MAX_TRACERS = 64
 const MAX_PARTICLES = 700
 const MAX_DECALS = 160
-const MAX_FLASHES = 32
+const MAX_FLASHES = 48
 
 const TRACER_SPEED = 170
 const TRACER_LENGTH = 7
@@ -148,11 +148,23 @@ export const fx = {
     emit(pos, dir, Math.round(5 * amount), { speed: [2, 6], spread: 0.5, life: [0.3, 0.6], size: [0.04, 0.08], gravity: 12, colors: [[0.6, 0, 0]] })
   },
 
-  explosion(pos: THREE.Vector3) {
+  explosion(pos: THREE.Vector3, scale = 1) {
     const up = new THREE.Vector3(0, 1, 0)
-    emit(pos, up, 40, { speed: [2, 8], spread: 2.5, life: [0.25, 0.6], size: [0.08, 0.2], gravity: 2, drag: 2.5, colors: [[2, 1.4, 0.3], [2, 0.8, 0.1], [1.6, 0.4, 0.05], [2, 1.9, 1]] })
-    emit(pos, up, 12, { speed: [0.5, 2], spread: 2, life: [0.6, 1.1], size: [0.15, 0.3], gravity: -1, drag: 1.5, colors: [[0.25, 0.22, 0.2], [0.15, 0.13, 0.12]] })
-    fx.flash(pos, 3.5, [2, 1.2, 0.4], 0.15)
+    const n = (k: number) => Math.round(k * scale)
+    emit(pos, up, n(40), { speed: [2 * scale, 8 * scale], spread: 2.5, life: [0.25, 0.6], size: [0.08 * scale, 0.2 * scale], gravity: 2, drag: 2.5, colors: [[2, 1.4, 0.3], [2, 0.8, 0.1], [1.6, 0.4, 0.05], [2, 1.9, 1]] })
+    emit(pos, up, n(12), { speed: [0.5, 2 * scale], spread: 2, life: [0.6, 1.1 * scale], size: [0.15 * scale, 0.3 * scale], gravity: -1, drag: 1.5, colors: [[0.25, 0.22, 0.2], [0.15, 0.13, 0.12]] })
+    if (scale > 1) {
+      // rondvliegend puin met zwaartekracht
+      emit(pos, up, n(10), { speed: [4, 11], spread: 1.6, life: [0.5, 1.0], size: [0.05, 0.1], gravity: 16, colors: [[0.35, 0.33, 0.3], [1.8, 0.9, 0.2]] })
+    }
+    fx.flash(pos, 3.5 * scale, [2, 1.2, 0.4], 0.15 * scale)
+  },
+
+  /** Rookspoor + vlammetje achter een raket. */
+  rocketTrail(pos: THREE.Vector3, dir: THREE.Vector3) {
+    const back = dir.clone().negate()
+    emit(pos, back, 1, { speed: [1, 3], spread: 0.3, life: [0.06, 0.14], size: [0.08, 0.14], gravity: 0, colors: [[2, 1.5, 0.4], [2, 0.9, 0.2]] })
+    emit(pos, back, 1, { speed: [0.1, 0.5], spread: 1, life: [0.6, 1.1], size: [0.12, 0.22], gravity: -0.6, drag: 1.2, colors: [[0.55, 0.53, 0.5], [0.4, 0.38, 0.36]] })
   },
 
   /** Rook/vonkjes uit een loop. */

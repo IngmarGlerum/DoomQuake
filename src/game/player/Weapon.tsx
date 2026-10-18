@@ -3,21 +3,19 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { sfx } from '../audio'
 import { fx } from '../combat/Effects'
+import { ROCKET_EXPLOSION, explode } from '../combat/explosions'
 import { raycast, runtime } from '../combat/runtime'
-import { WEAPONS, type WeaponDef, type WeaponId } from '../combat/weapons'
-import { damageEnemy } from '../enemies/Enemies'
+import { WEAPONS, type AmmoType, type WeaponDef, type WeaponId } from '../combat/weapons'
+import { damageEnemy } from '../enemies/damage'
+import { spawnRocket } from '../enemies/Projectiles'
 import type { Lighting, RGB } from '../render/lighting'
-import { machinegunGeometry, pistolGeometry, shotgunGeometry } from '../render/models'
+import { weaponGeometry as GEOMETRY } from '../render/models'
 import { player, useGame } from '../store'
 
-const GEOMETRY: Record<WeaponId, () => THREE.BufferGeometry> = {
-  pistol: pistolGeometry,
-  shotgun: shotgunGeometry,
-  machinegun: machinegunGeometry,
-}
 /** hoeveel de camera omhoog schopt per schot */
-const VIEW_PUNCH: Record<WeaponId, number> = { pistol: 0.014, shotgun: 0.03, machinegun: 0.005 }
+const VIEW_PUNCH: Record<WeaponId, number> = { pistol: 0.014, shotgun: 0.03, machinegun: 0.005, rocket: 0.04 }
 const SWITCH_TIME = 0.16
+const AMMO_NAME: Record<AmmoType, string> = { bullets: 'kogels', shells: 'shells', rockets: 'raketten' }
 const MAX_RANGE = 120
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a)
@@ -90,9 +88,39 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     runtime.lastShot = { x: camera.position.x, z: camera.position.z, time: performance.now() }
 
     sfx[def.id]()
-    fx.flash(muzzle, def.id === 'shotgun' ? 1.6 : 1.1, [2, 1.6, 0.7], 0.05)
+    fx.flash(muzzle, def.id === 'shotgun' || def.id === 'rocket' ? 1.7 : 1.1, [2, 1.6, 0.7], def.id === 'rocket' ? 0.09 : 0.05)
     fx.muzzleSmoke(muzzle, t.forward)
 
+    if (def.projectile) {
+      fireRocket(def, muzzle, t.forward)
+    } else {
+      fireHitscan(def, muzzle, t)
+    }
+
+    const s = state.current
+    s.kick = def.kick
+    s.flash = 0.05
+    camera.rotation.x = Math.min(Math.PI / 2, camera.rotation.x + VIEW_PUNCH[def.id] * rand(0.7, 1.2))
+    camera.rotation.y += rand(-0.3, 0.3) * VIEW_PUNCH[def.id]
+  }
+
+  /** Raket richting het punt onder het vizier; tegen een muur aan ontploft hij meteen. */
+  const fireRocket = (def: WeaponDef, muzzle: THREE.Vector3, forward: THREE.Vector3) => {
+    const aim = raycast(camera.position, forward, MAX_RANGE)
+    const target = aim ? aim.point : camera.position.clone().addScaledVector(forward, MAX_RANGE)
+    // zit er een muur tussen camera en loop, of staat het doel vlak voor je neus?
+    const toMuzzle = muzzle.clone().sub(camera.position)
+    const blocked = raycast(camera.position, toMuzzle.clone().normalize(), toMuzzle.length(), { ignoreEnemies: true })
+    if (blocked || (aim && aim.distance < 1.4)) {
+      const at = blocked ? blocked.point.addScaledVector(blocked.normal, 0.2) : aim!.point.addScaledVector(aim!.normal, 0.25)
+      if (aim?.enemy) damageEnemy(aim.enemy, Math.round(rand(...def.damage)), aim.point, forward)
+      explode(at, ROCKET_EXPLOSION)
+      return
+    }
+    spawnRocket(muzzle, target, Math.round(rand(...def.damage)))
+  }
+
+  const fireHitscan = (def: WeaponDef, muzzle: THREE.Vector3, t: typeof tmp.current) => {
     let fleshSounds = 0
     let wallSounds = 0
     for (let i = 0; i < def.pellets; i++) {
@@ -116,12 +144,6 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
         if (wallSounds++ < 2) sfx.ricochet(hit.point)
       }
     }
-
-    const s = state.current
-    s.kick = def.kick
-    s.flash = 0.05
-    camera.rotation.x = Math.min(Math.PI / 2, camera.rotation.x + VIEW_PUNCH[def.id] * rand(0.7, 1.2))
-    camera.rotation.y += rand(-0.3, 0.3) * VIEW_PUNCH[def.id]
   }
 
   useFrame((_, delta) => {
@@ -153,7 +175,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
       } else {
         sfx.click()
         s.cooldown = 0.35
-        game.say(`Geen ${def.ammo === 'shells' ? 'shells' : 'kogels'} meer voor de ${def.name}`)
+        game.say(`Geen ${AMMO_NAME[def.ammo]} meer voor de ${def.name}`)
       }
     }
     if (!game.locked) s.pressed = false

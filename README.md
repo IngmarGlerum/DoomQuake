@@ -17,7 +17,7 @@ npm run build
 ```
 
 **Besturing:** WASD/pijltjes lopen · muis kijken · klik schieten (machine gun: ingedrukt houden) ·
-1/2/3 of scrollwiel: heavy pistol / shotgun / machine gun · spatie springen (ingedrukt houden = bunnyhop) ·
+1/2/3/4 of scrollwiel: heavy pistol / shotgun / machine gun / rocket launcher · spatie springen (ingedrukt houden = bunnyhop) ·
 M kaart · N noclip · G nieuw level · Esc pauze.
 
 **Doel:** vind de rode sleutel, open de rode deur en bereik de EXIT.
@@ -36,8 +36,10 @@ M kaart · N noclip · G nieuw level · Esc pauze.
 - **Quake-achtige movement**: grondwrijving, acceleratie, air strafing en bunnyhop, met een vaste tijdstap van 120 Hz
   en Rapier character controller (autostep voor trappen)
 - Low-res rendering (300px hoog, pixelig opgeschaald) + fog
-- **Wapens** (`src/game/combat/weapons.ts`): heavy pistol, shotgun (8 hagels) en machine gun (automatisch),
-  hitscan via Rapier-raycasts, terugslag, view punch en twee munitiesoorten (bullets/shells)
+- **Wapens** (`src/game/combat/weapons.ts`): heavy pistol, shotgun (8 hagels), machine gun (automatisch) en
+  rocket launcher; hitscan via Rapier-raycasts, terugslag, view punch en drie munitiesoorten (bullets/shells/rockets)
+- **Raketten en explosies** (`src/game/combat/explosions.ts`): projectiel met rookspoor, splash damage die niet
+  door muren gaat, self-damage en knockback, dus rocket jumps (recht naar beneden schieten + springen)
 - **Effecten** (`src/game/combat/Effects.tsx`): gloeiende lichtsporen, vonken, stof, bloed, kogelgaten, inslagflitsen
   en explosies, allemaal uit vaste pools
 - **Vijand-AI** (`src/game/enemies/`): idle → wakker (zien of schoten horen) → achtervolgen via een gedeeld
@@ -74,8 +76,7 @@ om gegenereerde levels te inspecteren.
 
 ## Volgende stappen
 
-1. Rocket launcher met splash damage (en rocket jumps)
-2. Wapens als pickups in het level in plaats van alles vanaf de start
-3. Echte low-poly modellen (glTF) met animaties en samples in plaats van de placeholders
-4. Meer generator-variatie: liften, secrets, ramen tussen kamers, buitenruimtes met lucht
-5. Balancing: aantal vijanden per kamer, munitie en health over het level
+1. Wapens als pickups in het level in plaats van alles vanaf de start
+2. Echte low-poly modellen (glTF) met animaties en samples in plaats van de placeholders
+3. Meer generator-variatie: liften, secrets, ramen tussen kamers, buitenruimtes met lucht
+4. Balancing: aantal vijanden per kamer, munitie en health over het level

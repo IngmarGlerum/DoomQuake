@@ -1,5 +1,5 @@
-export type WeaponId = 'pistol' | 'shotgun' | 'machinegun'
-export type AmmoType = 'bullets' | 'shells'
+export type WeaponId = 'pistol' | 'shotgun' | 'machinegun' | 'rocket'
+export type AmmoType = 'bullets' | 'shells' | 'rockets'
 
 export interface WeaponDef {
   id: WeaponId
@@ -21,6 +21,8 @@ export interface WeaponDef {
   tracer: [number, number, number]
   /** positie van de loop t.o.v. de camera */
   muzzle: [number, number, number]
+  /** vuurt een projectiel (raket) in plaats van hitscan */
+  projectile?: boolean
 }
 
 export const WEAPONS: WeaponDef[] = [
@@ -66,6 +68,24 @@ export const WEAPONS: WeaponDef[] = [
     tracer: [1.4, 1.5, 0.8],
     muzzle: [0.22, -0.23, -1.22],
   },
+  {
+    id: 'rocket',
+    name: 'Rocket Launcher',
+    slot: 4,
+    ammo: 'rockets',
+    pellets: 1,
+    // directe treffer; de explosie doet daarnaast splash damage (zie explosions.ts)
+    damage: [40, 60],
+    spread: 0,
+    cooldown: 0.8,
+    auto: false,
+    kick: 1,
+    tracer: [0, 0, 0],
+    muzzle: [0.24, -0.2, -1.0],
+    projectile: true,
+  },
 ]
 
-export const AMMO_MAX: Record<AmmoType, number> = { bullets: 200, shells: 50 }
+export const AMMO_MAX: Record<AmmoType, number> = { bullets: 200, shells: 50, rockets: 30 }
+
+export const AMMO_LABEL: Record<AmmoType, string> = { bullets: 'BULLETS', shells: 'SHELLS', rockets: 'ROCKETS' }

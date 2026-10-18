@@ -51,7 +51,7 @@ const fresh = () => ({
   hasKey: false,
   health: 100,
   armor: 0,
-  ammo: { bullets: 60, shells: 12 },
+  ammo: { bullets: 60, shells: 12, rockets: 8 },
   weapon: 0,
   kills: 0,
   enemies: 0,
@@ -91,11 +91,12 @@ export const useGame = create<GameState>()((set, get) => ({
       set({ armor: Math.min(100, s.armor + 50) })
       s.say('Armor opgepakt')
     } else {
-      if (s.ammo.bullets >= AMMO_MAX.bullets && s.ammo.shells >= AMMO_MAX.shells) return false
+      if (s.ammo.bullets >= AMMO_MAX.bullets && s.ammo.shells >= AMMO_MAX.shells && s.ammo.rockets >= AMMO_MAX.rockets) return false
       set({
         ammo: {
           bullets: Math.min(AMMO_MAX.bullets, s.ammo.bullets + 30),
           shells: Math.min(AMMO_MAX.shells, s.ammo.shells + 6),
+          rockets: Math.min(AMMO_MAX.rockets, s.ammo.rockets + 2),
         },
       })
       s.say('Munitie opgepakt')
@@ -154,4 +155,6 @@ export const player = {
   speed: 0,
   grounded: false,
   cell: 0,
+  /** wordt door explosies gevuld en door de Player-controller bij de snelheid opgeteld (rocket jumps) */
+  impulse: new THREE.Vector3(),
 }

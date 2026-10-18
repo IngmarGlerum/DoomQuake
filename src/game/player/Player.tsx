@@ -123,6 +123,15 @@ export function Player({ level }: { level: Level }) {
     const wishSpeed = len > 0 ? MOVE.maxSpeed : 0
     const v = s.vel
 
+    // knockback van explosies (rocket jumps)
+    if (player.impulse.lengthSq() > 0) {
+      v.x += player.impulse.x
+      v.y += player.impulse.y
+      v.z += player.impulse.z
+      player.impulse.set(0, 0, 0)
+      if (v.y > 0) s.grounded = false
+    }
+
     if (s.grounded && input.jump) {
       v.y = MOVE.jumpSpeed
       s.grounded = false
