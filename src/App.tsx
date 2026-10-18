@@ -15,6 +15,8 @@ import { createLighting } from './game/render/lighting'
 import { useGame } from './game/store'
 import { Hud } from './ui/Hud'
 import { Minimap } from './ui/Minimap'
+import { TouchControls } from './ui/TouchControls'
+import { isTouchDevice } from './game/player/input'
 
 /** Interne renderhoogte in pixels; het beeld wordt pixelig opgeschaald. */
 const RENDER_HEIGHT = 300
@@ -74,13 +76,17 @@ export default function App() {
           <Things level={level} lighting={lighting} />
           <Effects />
         </Suspense>
-        <PointerLockControls
-          onLock={() => useGame.getState().setLocked(true)}
-          onUnlock={() => useGame.getState().setLocked(false)}
-        />
+        {/* op touchscreens geen pointer lock: daar kijk je door te slepen */}
+        {!isTouchDevice && (
+          <PointerLockControls
+            onLock={() => useGame.getState().setLocked(true)}
+            onUnlock={() => useGame.getState().setLocked(false)}
+          />
+        )}
       </Canvas>
       <Minimap level={level} />
       <Hud level={level} />
+      {isTouchDevice && <TouchControls />}
     </>
   )
 }

@@ -65,7 +65,8 @@ export const useGame = create<GameState>()((set, get) => ({
   run: 0,
   ...fresh(),
   locked: false,
-  showMap: true,
+  // op kleine schermen staat de kaart standaard uit
+  showMap: !window.matchMedia?.('(pointer: coarse)').matches,
   noclip: false,
 
   newLevel(seed = randomSeed()) {

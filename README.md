@@ -20,6 +20,11 @@ npm run build
 1/2/3/4 of scrollwiel: heavy pistol / shotgun / machine gun / rocket launcher · spatie springen (ingedrukt houden = bunnyhop) ·
 M kaart · N noclip · G nieuw level · Esc pauze.
 
+**Mobiel (landscape):** linkerduim = zwevende joystick · rechterduim slepen = kijken · 🔥 = schieten
+(vasthouden en slepen om te richten) · ⤒ = springen · tik op een wapenicoon om te wisselen. Houd je telefoon
+opzij; in portretstand verschijnt een melding. Op Android gaat het spel fullscreen in landscape; op iPhone werkt
+"Zet op beginscherm" het best (dan start het fullscreen).
+
 **Doel:** vind de rode sleutel, open de rode deur en bereik de EXIT.
 
 ## Wat er nu is

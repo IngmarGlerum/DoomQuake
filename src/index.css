@@ -38,6 +38,8 @@ body,
 .hud {
   position: fixed;
   inset: 0;
+  /* boven de touch-laag; alleen tikbare elementen vangen events */
+  z-index: 6;
   pointer-events: none;
   text-shadow: 2px 2px 0 #000;
 }
@@ -263,5 +265,276 @@ body,
 @keyframes blink {
   50% {
     opacity: 0.2;
+  }
+}
+
+/* ---------- mobiel / touch ---------- */
+
+html,
+body {
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.weapons.tappable {
+  pointer-events: auto;
+}
+
+.weapons.tappable .slot {
+  cursor: pointer;
+}
+
+.overlay-btn {
+  pointer-events: auto;
+  font-family: inherit;
+  font-size: 34px;
+  letter-spacing: 3px;
+  color: #ffe080;
+  background: #5a1010;
+  border: 3px solid #d04020;
+  box-shadow: 0 0 14px rgba(255, 80, 0, 0.5), inset 0 -4px 0 #300808;
+  padding: 6px 28px;
+  margin: 6px;
+  cursor: pointer;
+}
+
+.overlay-btn.secondary {
+  background: #2a2a2a;
+  border-color: #666;
+  color: #c8c8c8;
+  box-shadow: none;
+}
+
+.overlay-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.touch-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  touch-action: none;
+}
+
+.stick-base {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 210, 120, 0.45);
+  background: rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.stick-knob {
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 200, 90, 0.55);
+  border: 2px solid rgba(255, 230, 160, 0.8);
+}
+
+.touch-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 210, 120, 0.55);
+  background: rgba(60, 20, 10, 0.45);
+  color: #ffe080;
+  touch-action: none;
+  user-select: none;
+}
+
+.touch-btn:active {
+  background: rgba(200, 60, 20, 0.55);
+}
+
+.touch-btn.fire {
+  right: calc(28px + env(safe-area-inset-right));
+  bottom: 104px;
+  width: 92px;
+  height: 92px;
+  font-size: 40px;
+}
+
+.touch-btn.jump {
+  right: calc(132px + env(safe-area-inset-right));
+  bottom: 150px;
+  width: 64px;
+  height: 64px;
+  font-size: 34px;
+}
+
+.touch-top {
+  position: absolute;
+  top: 8px;
+  right: calc(10px + env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+}
+
+.touch-small {
+  font-family: inherit;
+  font-size: 20px;
+  width: 44px;
+  height: 40px;
+  color: #ffe080;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 210, 120, 0.45);
+}
+
+.rotate-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  background: #0a0000;
+  color: #e0c070;
+  font-size: 22px;
+}
+
+.rotate-prompt h2 {
+  margin: 18px 0 6px;
+  font-size: 44px;
+  color: #d02020;
+  letter-spacing: 3px;
+  text-shadow: 3px 3px 0 #400;
+}
+
+.rotate-phone {
+  width: 54px;
+  height: 92px;
+  border: 5px solid #e0c070;
+  border-radius: 10px;
+  position: relative;
+  animation: rotate-phone 2s ease-in-out infinite;
+}
+
+.rotate-phone::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 10px;
+  height: 4px;
+  margin-left: -5px;
+  background: #e0c070;
+}
+
+@keyframes rotate-phone {
+  0%,
+  25% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+/* lage schermen (telefoon in landscape): compacte HUD */
+@media (max-height: 500px) {
+  .statusbar {
+    height: 56px;
+    gap: 10px;
+    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  }
+
+  .stat {
+    min-width: 58px;
+  }
+
+  .stat .value {
+    font-size: 30px;
+  }
+
+  .stat .label {
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  .slot {
+    width: 58px;
+    height: 44px;
+  }
+
+  .slot img {
+    width: 52px;
+  }
+
+  .slot-key,
+  .slot-ammo {
+    font-size: 14px;
+  }
+
+  .face {
+    font-size: 30px;
+    width: 46px;
+    line-height: 44px;
+  }
+
+  .keycard {
+    width: 14px;
+    height: 20px;
+  }
+
+  .keys {
+    font-size: 13px;
+  }
+
+  .overlay {
+    inset: 0 0 56px 0;
+    font-size: 17px;
+  }
+
+  .overlay h1 {
+    font-size: 48px;
+  }
+
+  .overlay table {
+    margin-top: 6px;
+  }
+
+  .overlay .hint {
+    margin-top: 6px;
+  }
+
+  .minimap {
+    width: 140px;
+    height: 140px;
+    top: 8px;
+    left: calc(8px + env(safe-area-inset-left));
+  }
+
+  .message {
+    font-size: 20px;
+  }
+
+  .topright {
+    display: none;
+  }
+
+  .touch-btn.fire {
+    bottom: 72px;
+  }
+
+  .touch-btn.jump {
+    bottom: 118px;
   }
 }

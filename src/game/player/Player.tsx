@@ -7,7 +7,7 @@ import { sfx } from '../audio'
 import { runtime } from '../combat/runtime'
 import { CELL, type Level } from '../level/types'
 import { player, useGame } from '../store'
-import { readMoveInput } from './input'
+import { look, readMoveInput } from './input'
 import { MOVE, accelerate, applyFriction } from './movement'
 
 const RADIUS = 0.4
@@ -16,6 +16,8 @@ const CENTER_TO_FEET = HALF_HEIGHT + RADIUS
 const EYE = 0.65 // oog boven het midden van de capsule (≈1.55m)
 const DT = 1 / 120
 const MAX_AUTOSTEP = 0.55
+/** radialen per pixel slepen op touchscreens */
+const TOUCH_LOOK_SPEED = 0.0062
 
 /**
  * Speler als losse collider + Rapier character controller. Movement draait op een
@@ -120,7 +122,8 @@ export function Player({ level }: { level: Level }) {
       wx /= len
       wz /= len
     }
-    const wishSpeed = len > 0 ? MOVE.maxSpeed : 0
+    // analoge joystick: half uitgeslagen = halve snelheid
+    const wishSpeed = MOVE.maxSpeed * Math.min(1, len)
     const v = s.vel
 
     // knockback van explosies (rocket jumps)
@@ -177,6 +180,15 @@ export function Player({ level }: { level: Level }) {
 
   useFrame((_, delta) => {
     const s = sim.current
+
+    // kijken met touch (slepen); muis gaat via PointerLockControls
+    if (look.dx || look.dy) {
+      camera.rotation.order = 'YXZ'
+      camera.rotation.y -= look.dx * TOUCH_LOOK_SPEED
+      camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x - look.dy * TOUCH_LOOK_SPEED))
+      look.dx = look.dy = 0
+    }
+
     s.acc += Math.min(delta, 0.1)
     while (s.acc >= DT) {
       s.prev.copy(s.cur)

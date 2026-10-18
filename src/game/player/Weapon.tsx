@@ -11,6 +11,7 @@ import { spawnRocket } from '../enemies/Projectiles'
 import type { Lighting, RGB } from '../render/lighting'
 import { weaponGeometry as GEOMETRY } from '../render/models'
 import { player, useGame } from '../store'
+import { fireButton } from './input'
 
 /** hoeveel de camera omhoog schopt per schot */
 const VIEW_PUNCH: Record<WeaponId, number> = { pistol: 0.014, shotgun: 0.03, machinegun: 0.005, rocket: 0.04 }
@@ -167,8 +168,11 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
 
     s.cooldown = Math.max(0, s.cooldown - delta)
     const ready = game.locked && game.status === 'playing' && wanted === s.shown && s.lower < 0.2
-    if (ready && s.cooldown <= 0 && (s.pressed || (s.held && def.auto))) {
+    const pressed = s.pressed || fireButton.pressed
+    const held = s.held || fireButton.held
+    if (ready && s.cooldown <= 0 && (pressed || (held && def.auto))) {
       s.pressed = false
+      fireButton.pressed = false
       if (game.useAmmo()) {
         fire(def)
         s.cooldown = def.cooldown
@@ -178,7 +182,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
         game.say(`Geen ${AMMO_NAME[def.ammo]} meer voor de ${def.name}`)
       }
     }
-    if (!game.locked) s.pressed = false
+    if (!game.locked) s.pressed = fireButton.pressed = false
 
     s.kick = Math.max(0, s.kick - delta * (def.auto ? 14 : 4))
     s.flash = Math.max(0, s.flash - delta)

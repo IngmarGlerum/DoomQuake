@@ -20,6 +20,11 @@ function audio() {
   return ctx
 }
 
+/** Moet vanuit een tik/klik aangeroepen worden: mobiele browsers starten audio pas na een gebaar. */
+export function unlockAudio() {
+  audio()
+}
+
 export interface Pos {
   x: number
   y?: number

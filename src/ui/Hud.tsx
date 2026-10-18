@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { AMMO_LABEL, WEAPONS } from '../game/combat/weapons'
 import type { Level } from '../game/level/types'
 import { getWeaponIcons } from '../game/render/weaponIcons'
+import { sfx } from '../game/audio'
+import { isTouchDevice } from '../game/player/input'
 import { useGame } from '../game/store'
+import { startTouchPlay } from './TouchControls'
 
 const MESSAGE_MS = 2500
 
@@ -28,9 +31,14 @@ export function Hud({ level }: { level: Level }) {
       </div>
 
       <div className="statusbar">
-        <div className="weapons">
+        <div className={`weapons ${isTouchDevice ? 'tappable' : ''}`}>
           {WEAPONS.map((w, i) => (
-            <div key={w.id} className={`slot ${i === weapon ? 'selected' : ''} ${ammo[w.ammo] <= 0 ? 'empty' : ''}`} title={w.name}>
+            <div
+              key={w.id}
+              className={`slot ${i === weapon ? 'selected' : ''} ${ammo[w.ammo] <= 0 ? 'empty' : ''}`}
+              title={w.name}
+              onPointerDown={() => useGame.getState().selectWeapon(i) && sfx.weaponSwitch()}
+            >
               <span className="slot-key">{w.slot}</span>
               <img src={icons[w.id]} alt={w.name} />
               <span className="slot-ammo">{ammo[w.ammo]}</span>
@@ -51,33 +59,63 @@ export function Hud({ level }: { level: Level }) {
       {status === 'playing' && !locked && (
         <div className="overlay">
           <h1>RETRO SHOOTER</h1>
-          <p className="blink">Klik om te spelen</p>
-          <table>
-            <tbody>
-              <tr><td>WASD / pijltjes</td><td>lopen</td></tr>
-              <tr><td>muis</td><td>rondkijken</td></tr>
-              <tr><td>klik</td><td>schieten (machine gun: ingedrukt houden)</td></tr>
-              <tr><td>1 / 2 / 3 / 4, scrollwiel</td><td>heavy pistol / shotgun / machine gun / rocket launcher</td></tr>
-              <tr><td>spatie</td><td>springen (houd ingedrukt om te bunnyhoppen)</td></tr>
-              <tr><td>M</td><td>kaart aan/uit</td></tr>
-              <tr><td>N</td><td>noclip (vrij vliegen, spatie/C = omhoog/omlaag)</td></tr>
-              <tr><td>G</td><td>nieuw willekeurig level</td></tr>
-              <tr><td>Esc</td><td>pauze</td></tr>
-            </tbody>
-          </table>
+          {isTouchDevice ? (
+            <>
+              <button className="overlay-btn" onClick={startTouchPlay}>
+                ▶ SPELEN
+              </button>
+              <table>
+                <tbody>
+                  <tr><td>linkerduim</td><td>joystick: lopen (verschijnt waar je drukt)</td></tr>
+                  <tr><td>rechterduim</td><td>slepen om rond te kijken</td></tr>
+                  <tr><td>🔥</td><td>schieten (vasthouden + slepen om te richten)</td></tr>
+                  <tr><td>⤒</td><td>springen</td></tr>
+                  <tr><td>wapenicoontjes</td><td>tikken om te wisselen</td></tr>
+                </tbody>
+              </table>
+            </>
+          ) : (
+            <>
+              <p className="blink">Klik om te spelen</p>
+              <table>
+                <tbody>
+                  <tr><td>WASD / pijltjes</td><td>lopen</td></tr>
+                  <tr><td>muis</td><td>rondkijken</td></tr>
+                  <tr><td>klik</td><td>schieten (machine gun: ingedrukt houden)</td></tr>
+                  <tr><td>1 / 2 / 3 / 4, scrollwiel</td><td>heavy pistol / shotgun / machine gun / rocket launcher</td></tr>
+                  <tr><td>spatie</td><td>springen (houd ingedrukt om te bunnyhoppen)</td></tr>
+                  <tr><td>M</td><td>kaart aan/uit</td></tr>
+                  <tr><td>N</td><td>noclip (vrij vliegen, spatie/C = omhoog/omlaag)</td></tr>
+                  <tr><td>G</td><td>nieuw willekeurig level</td></tr>
+                  <tr><td>Esc</td><td>pauze</td></tr>
+                </tbody>
+              </table>
+            </>
+          )}
           <p className="hint">Zoek de rode sleutel, open de rode deur en bereik de EXIT.</p>
         </div>
       )}
       {status === 'won' && (
         <div className="overlay">
           <h1>LEVEL VOLTOOID</h1>
-          <p className="blink">Enter: volgend level · R: dit level opnieuw</p>
+          {isTouchDevice ? (
+            <div className="overlay-buttons">
+              <button className="overlay-btn" onClick={() => useGame.getState().newLevel()}>Volgend level</button>
+              <button className="overlay-btn secondary" onClick={() => useGame.getState().restart()}>Opnieuw</button>
+            </div>
+          ) : (
+            <p className="blink">Enter: volgend level · R: dit level opnieuw</p>
+          )}
         </div>
       )}
       {status === 'dead' && (
         <div className="overlay dead">
           <h1>JE BENT DOOD</h1>
-          <p className="blink">Enter of R: opnieuw</p>
+          {isTouchDevice ? (
+            <button className="overlay-btn" onClick={() => useGame.getState().restart()}>Opnieuw</button>
+          ) : (
+            <p className="blink">Enter of R: opnieuw</p>
+          )}
         </div>
       )}
     </div>
