@@ -25,6 +25,9 @@ M kaart · N noclip · G nieuw level · Esc pauze.
 opzij; in portretstand verschijnt een melding. Op Android gaat het spel fullscreen in landscape; op iPhone werkt
 "Zet op beginscherm" het best (dan start het fullscreen).
 
+**Moeilijkheid:** op telefoons krijg je de helft van de schade en doe je 1,5× zoveel schade (mikken met je duim is
+lastiger). Forceren kan met `?difficulty=mobiel` of `?difficulty=normaal`.
+
 **Doel:** vind de rode sleutel, open de rode deur en bereik de EXIT.
 
 ## Wat er nu is
@@ -52,6 +55,8 @@ opzij; in portretstand verschijnt een melding. Op Android gaat het spel fullscre
   - grunt: hitscan-geweer (minder raak op afstand en als je rent)
   - imp: vuurballen die je kunt ontwijken
   - demon: snel, valt aan met een beet
+- **Drops**: verslagen vijanden laten soms iets vallen (grunt: kogels/stimpack, imp: shells/stimpack,
+  demon: stimpack/raket/shells); bij weinig health valt er vaker een stimpack
 - Positionele audio: volume op afstand en stereo-panning t.o.v. je kijkrichting
 - HUD met wapenminiaturen (offscreen gerenderd uit de 3D-modellen), geselecteerd wapen gehighlight, kills-teller
   en een rode flits bij schade

@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Effects } from './game/combat/Effects'
+import { Drops } from './game/enemies/Drops'
 import { Enemies } from './game/enemies/Enemies'
 import { Projectiles } from './game/enemies/Projectiles'
 import { Doors } from './game/level/Doors'
@@ -74,6 +75,7 @@ export default function App() {
             <Weapon lighting={lighting} />
           </Physics>
           <Things level={level} lighting={lighting} />
+          <Drops lighting={lighting} />
           <Effects />
         </Suspense>
         {/* op touchscreens geen pointer lock: daar kijk je door te slepen */}

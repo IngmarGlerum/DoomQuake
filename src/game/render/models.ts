@@ -133,6 +133,40 @@ export const pickupGeometry = {
         { geo: box(0.2, 0.65, 0.24), color: 0x50c060, pos: [0, 0.33, 0] },
       ]),
     ),
+  stimpack: () =>
+    cached('stimpack', () =>
+      merge([
+        { geo: box(0.3, 0.18, 0.22), color: 0xe8e8e8, pos: [0, 0.09, 0] },
+        { geo: box(0.16, 0.02, 0.05), color: 0xd01010, pos: [0, 0.19, 0] },
+        { geo: box(0.05, 0.02, 0.16), color: 0xd01010, pos: [0, 0.19, 0] },
+      ]),
+    ),
+  clip: () =>
+    cached('clip', () =>
+      merge([
+        { geo: box(0.1, 0.28, 0.16), color: 0x2a2c30, pos: [0, 0.14, 0], rot: [0.15, 0, 0] },
+        { geo: box(0.08, 0.04, 0.12), color: 0xd8b020, pos: [0, 0.3, -0.02], rot: [0.15, 0, 0] },
+      ]),
+    ),
+  shells: () =>
+    cached('shells', () =>
+      merge([
+        { geo: cyl(0.04, 0.16), color: 0xb02010, pos: [-0.09, 0.08, 0] },
+        { geo: cyl(0.04, 0.16), color: 0xb02010, pos: [0, 0.08, 0.02] },
+        { geo: cyl(0.04, 0.16), color: 0xb02010, pos: [0.09, 0.08, 0] },
+        { geo: cyl(0.042, 0.04), color: 0xd8b020, pos: [-0.09, 0.02, 0] },
+        { geo: cyl(0.042, 0.04), color: 0xd8b020, pos: [0, 0.02, 0.02] },
+        { geo: cyl(0.042, 0.04), color: 0xd8b020, pos: [0.09, 0.02, 0] },
+      ]),
+    ),
+  /** losse raket rechtop, als munitie-drop */
+  rocketAmmo: () =>
+    cached('rocket-ammo', () => {
+      const g = rocketGeometry().clone()
+      g.rotateX(-Math.PI / 2)
+      g.translate(0, 0.3, 0)
+      return g
+    }),
   key: () =>
     cached('key', () =>
       merge([

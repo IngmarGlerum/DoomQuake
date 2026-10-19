@@ -1,10 +1,13 @@
 import * as THREE from 'three'
 import { create } from 'zustand'
 import { AMMO_MAX, WEAPONS, type AmmoType } from './combat/weapons'
+import { DIFFICULTY } from './difficulty'
 import { randomSeed } from './rng'
 
 export type Status = 'playing' | 'won' | 'dead'
 export type PickupKind = 'health' | 'ammo' | 'armor'
+/** Kleine pickups die vijanden laten vallen. */
+export type DropKind = 'stimpack' | 'clip' | 'shells' | 'rocket'
 
 interface GameState {
   seed: string
@@ -30,7 +33,7 @@ interface GameState {
   newLevel(seed?: string): void
   restart(): void
   say(message: string): void
-  pickup(kind: PickupKind): boolean
+  pickup(kind: PickupKind | DropKind): boolean
   takeKey(): void
   damage(amount: number): void
   /** verbruikt munitie voor het huidige wapen; false als leeg */
@@ -91,6 +94,16 @@ export const useGame = create<GameState>()((set, get) => ({
       if (s.armor >= 100) return false
       set({ armor: Math.min(100, s.armor + 50) })
       s.say('Armor opgepakt')
+    } else if (kind === 'stimpack') {
+      if (s.health >= 100) return false
+      set({ health: Math.min(100, s.health + 10) })
+      s.say('Stimpack (+10 health)')
+    } else if (kind === 'clip' || kind === 'shells' || kind === 'rocket') {
+      const type = kind === 'clip' ? 'bullets' : kind === 'shells' ? 'shells' : 'rockets'
+      const amount = kind === 'clip' ? 12 : kind === 'shells' ? 4 : 1
+      if (s.ammo[type] >= AMMO_MAX[type]) return false
+      set({ ammo: { ...s.ammo, [type]: Math.min(AMMO_MAX[type], s.ammo[type] + amount) } })
+      s.say(kind === 'clip' ? `+${amount} kogels` : kind === 'shells' ? `+${amount} shells` : '+1 raket')
     } else {
       if (s.ammo.bullets >= AMMO_MAX.bullets && s.ammo.shells >= AMMO_MAX.shells && s.ammo.rockets >= AMMO_MAX.rockets) return false
       set({
@@ -111,6 +124,7 @@ export const useGame = create<GameState>()((set, get) => ({
   damage(amount) {
     const s = get()
     if (s.status !== 'playing' || get().noclip) return
+    amount *= DIFFICULTY.damageTaken
     const absorbed = Math.min(s.armor, amount / 3)
     const health = Math.max(0, s.health - (amount - absorbed))
     set({ armor: s.armor - absorbed, health, hurtAt: performance.now(), status: health <= 0 ? 'dead' : s.status })
