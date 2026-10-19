@@ -139,8 +139,8 @@ function updateFireball(p: Projectile, step: number, dir: THREE.Vector3) {
   if (distToPlayer(p.pos) < HIT_RADIUS) {
     useGame.getState().damage(p.damage)
     sfx.hurt()
-    // niet in de camera ontploffen: een stukje terug langs de baan
-    smallBoom(p, p.pos.clone().addScaledVector(dir, -0.9))
+    // niet in de camera ontploffen: een stukje terug langs de baan, en kleiner
+    smallBoom(p, p.pos.clone().addScaledVector(dir, -1.6), 0.5)
   } else if (wall) {
     smallBoom(p, wall.point.addScaledVector(wall.normal, 0.2))
   } else if (p.life <= 0) {
@@ -164,8 +164,8 @@ function updateRocket(p: Projectile, step: number, dir: THREE.Vector3) {
   }
 }
 
-function smallBoom(p: Projectile, at: THREE.Vector3) {
+function smallBoom(p: Projectile, at: THREE.Vector3, scale = 1) {
   p.active = false
-  fx.explosion(at)
+  fx.explosion(at, scale)
   sfx.explosion(at)
 }

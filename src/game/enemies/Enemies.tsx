@@ -61,6 +61,7 @@ export function Enemies({ level, lighting }: { level: Level; lighting: Lighting 
   // colliders aanmaken zodat kogels én de speler ze raken
   useEffect(() => {
     useGame.getState().setEnemyCount(enemies.length)
+    if (import.meta.env.DEV) Object.assign(window, { __enemies: enemies })
     for (const e of enemies) {
       const half = e.def.height / 2 - e.def.radius
       e.collider = world.createCollider(

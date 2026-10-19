@@ -7,7 +7,7 @@ import { randomSeed } from './rng'
 export type Status = 'playing' | 'won' | 'dead'
 export type PickupKind = 'health' | 'ammo' | 'armor'
 /** Kleine pickups die vijanden laten vallen. */
-export type DropKind = 'stimpack' | 'clip' | 'shells' | 'rocket'
+export type DropKind = 'stimpack' | 'clip' | 'shells' | 'rocket' | 'disks'
 
 interface GameState {
   seed: string
@@ -54,7 +54,7 @@ const fresh = () => ({
   hasKey: false,
   health: 100,
   armor: 0,
-  ammo: { bullets: 60, shells: 12, rockets: 8 },
+  ammo: { bullets: 60, shells: 12, rockets: 8, disks: 10 },
   weapon: 0,
   kills: 0,
   enemies: 0,
@@ -98,19 +98,20 @@ export const useGame = create<GameState>()((set, get) => ({
       if (s.health >= 100) return false
       set({ health: Math.min(100, s.health + 10) })
       s.say('Stimpack (+10 health)')
-    } else if (kind === 'clip' || kind === 'shells' || kind === 'rocket') {
-      const type = kind === 'clip' ? 'bullets' : kind === 'shells' ? 'shells' : 'rockets'
-      const amount = kind === 'clip' ? 12 : kind === 'shells' ? 4 : 1
+    } else if (kind === 'clip' || kind === 'shells' || kind === 'rocket' || kind === 'disks') {
+      const type = ({ clip: 'bullets', shells: 'shells', rocket: 'rockets', disks: 'disks' } as const)[kind]
+      const amount = { clip: 12, shells: 4, rocket: 1, disks: 2 }[kind]
       if (s.ammo[type] >= AMMO_MAX[type]) return false
       set({ ammo: { ...s.ammo, [type]: Math.min(AMMO_MAX[type], s.ammo[type] + amount) } })
-      s.say(kind === 'clip' ? `+${amount} kogels` : kind === 'shells' ? `+${amount} shells` : '+1 raket')
+      s.say({ clip: `+${amount} kogels`, shells: `+${amount} shells`, rocket: '+1 raket', disks: `+${amount} disks` }[kind])
     } else {
-      if (s.ammo.bullets >= AMMO_MAX.bullets && s.ammo.shells >= AMMO_MAX.shells && s.ammo.rockets >= AMMO_MAX.rockets) return false
+      if (s.ammo.bullets >= AMMO_MAX.bullets && s.ammo.shells >= AMMO_MAX.shells && s.ammo.rockets >= AMMO_MAX.rockets && s.ammo.disks >= AMMO_MAX.disks) return false
       set({
         ammo: {
           bullets: Math.min(AMMO_MAX.bullets, s.ammo.bullets + 30),
           shells: Math.min(AMMO_MAX.shells, s.ammo.shells + 6),
           rockets: Math.min(AMMO_MAX.rockets, s.ammo.rockets + 2),
+          disks: Math.min(AMMO_MAX.disks, s.ammo.disks + 3),
         },
       })
       s.say('Munitie opgepakt')

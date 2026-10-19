@@ -2,6 +2,7 @@ import { PointerLockControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Disks } from './game/combat/Disks'
 import { Effects } from './game/combat/Effects'
 import { Drops } from './game/enemies/Drops'
 import { Enemies } from './game/enemies/Enemies'
@@ -76,6 +77,7 @@ export default function App() {
           </Physics>
           <Things level={level} lighting={lighting} />
           <Drops lighting={lighting} />
+          <Disks lighting={lighting} />
           <Effects />
         </Suspense>
         {/* op touchscreens geen pointer lock: daar kijk je door te slepen */}

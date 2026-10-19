@@ -3,23 +3,32 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { sfx } from '../audio'
 import { fx } from '../combat/Effects'
+import { spawnDisk } from '../combat/Disks'
 import { ROCKET_EXPLOSION, explode } from '../combat/explosions'
 import { raycast, runtime } from '../combat/runtime'
 import { WEAPONS, type AmmoType, type WeaponDef, type WeaponId } from '../combat/weapons'
 import { damageEnemy } from '../enemies/damage'
 import { spawnRocket } from '../enemies/Projectiles'
 import type { Lighting, RGB } from '../render/lighting'
-import { weaponGeometry as GEOMETRY } from '../render/models'
+import { diskLauncherBodyGeometry, diskSeat, viewDiskGeometry, weaponGeometry as GEOMETRY } from '../render/models'
 import { player, useGame } from '../store'
 import { fireButton } from './input'
 
 /** hoeveel de camera omhoog schopt per schot */
-const VIEW_PUNCH: Record<WeaponId, number> = { pistol: 0.014, shotgun: 0.03, machinegun: 0.005, rocket: 0.04 }
+const VIEW_PUNCH: Record<WeaponId, number> = { pistol: 0.014, shotgun: 0.03, machinegun: 0.005, rocket: 0.04, disk: 0.012 }
 const SWITCH_TIME = 0.16
-const AMMO_NAME: Record<AmmoType, string> = { bullets: 'kogels', shells: 'shells', rockets: 'raketten' }
+const AMMO_NAME: Record<AmmoType, string> = { bullets: 'kogels', shells: 'shells', rockets: 'raketten', disks: 'disks' }
 const MAX_RANGE = 120
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a)
+
+/** In het viewmodel ligt de schijf los op de launcher, zodat hij kan wegvliegen en herladen. */
+const viewGeometry = (id: WeaponId) => (id === 'disk' ? diskLauncherBodyGeometry() : GEOMETRY[id]())
+
+/** Tijdlijn van de disk-animatie (seconden na het schot). */
+const DISK_FLY = 0.07
+const DISK_RELOAD_START = 0.25
+const DISK_RELOAD_END = 0.62
 
 /**
  * Wapen-viewmodel + vuren. Hitscan via een raycast vanuit de camera; het lichtspoor
@@ -41,7 +50,13 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     shown: useGame.getState().weapon,
     /** 0 = omhoog, 1 = helemaal weggezakt */
     lower: 0,
+    /** tijd sinds het laatste disk-schot (groot = schijf ligt klaar) */
+    diskT: 99,
+    diskSlid: true,
+    diskClicked: true,
   })
+  const disk = useRef<THREE.Mesh>(null)
+  if (import.meta.env.DEV) Object.assign(window, { __weapon: { state: state.current, disk } })
   const light = useRef<RGB>([0, 0, 0])
 
   useEffect(() => {
@@ -89,10 +104,16 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     runtime.lastShot = { x: camera.position.x, z: camera.position.z, time: performance.now() }
 
     sfx[def.id]()
-    fx.flash(muzzle, def.id === 'shotgun' || def.id === 'rocket' ? 1.7 : 1.1, [2, 1.6, 0.7], def.id === 'rocket' ? 0.09 : 0.05)
-    fx.muzzleSmoke(muzzle, t.forward)
+    if (def.id === 'disk') {
+      fx.flash(muzzle, 0.8, [1.4, 1.6, 2], 0.05)
+    } else {
+      fx.flash(muzzle, def.id === 'shotgun' || def.id === 'rocket' ? 1.7 : 1.1, [2, 1.6, 0.7], def.id === 'rocket' ? 0.09 : 0.05)
+      fx.muzzleSmoke(muzzle, t.forward)
+    }
 
-    if (def.projectile) {
+    if (def.id === 'disk') {
+      fireDisk(def, muzzle, t.forward)
+    } else if (def.projectile) {
       fireRocket(def, muzzle, t.forward)
     } else {
       fireHitscan(def, muzzle, t)
@@ -119,6 +140,24 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
       return
     }
     spawnRocket(muzzle, target, Math.round(rand(...def.damage)))
+  }
+
+  /** Disk richting het punt onder het vizier; hij stuitert verder in Disks.tsx. */
+  const fireDisk = (def: WeaponDef, muzzle: THREE.Vector3, forward: THREE.Vector3) => {
+    const aim = raycast(camera.position, forward, MAX_RANGE, { ignoreEnemies: true })
+    const toMuzzle = muzzle.clone().sub(camera.position)
+    const blocked = raycast(camera.position, toMuzzle.clone().normalize(), toMuzzle.length(), { ignoreEnemies: true })
+    if (blocked || (aim && aim.distance < 1.2)) {
+      // te dicht op een muur: lanceer vanuit de camera zelf
+      spawnDisk(camera.position, forward, def.damage)
+    } else {
+      const target = aim ? aim.point : camera.position.clone().addScaledVector(forward, MAX_RANGE)
+      spawnDisk(muzzle, target.sub(muzzle).normalize(), def.damage)
+    }
+    const s = state.current
+    s.diskT = 0
+    s.diskSlid = false
+    s.diskClicked = false
   }
 
   const fireHitscan = (def: WeaponDef, muzzle: THREE.Vector3, t: typeof tmp.current) => {
@@ -158,12 +197,17 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     const wanted = game.weapon
     if (wanted !== s.shown) {
       s.lower = Math.min(1, s.lower + delta / SWITCH_TIME)
-      if (s.lower >= 1) s.shown = wanted
+      if (s.lower >= 1) {
+        s.shown = wanted
+        // na het wisselen ligt er (als er munitie is) meteen een schijf klaar
+        s.diskT = 99
+        s.diskSlid = s.diskClicked = true
+      }
     } else {
       s.lower = Math.max(0, s.lower - delta / SWITCH_TIME)
     }
     const def = WEAPONS[s.shown]
-    const geometry = GEOMETRY[def.id]()
+    const geometry = viewGeometry(def.id)
     if (m.geometry !== geometry) m.geometry = geometry
 
     s.cooldown = Math.max(0, s.cooldown - delta)
@@ -209,12 +253,53 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
       Math.min(1.4, c[1] + 0.15 + boost),
       Math.min(1.4, c[2] + 0.15 + boost),
     )
+
+    // disk launcher: schijf vliegt weg, launcher is even leeg, nieuwe schijf schuift van onder in beeld
+    const dm = disk.current
+    if (dm) {
+      dm.visible = false
+      if (def.id === 'disk') {
+        s.diskT += delta
+        const t = s.diskT
+        const hasAmmo = game.ammo.disks > 0
+        const [sx, sy, sz] = diskSeat
+        dm.rotation.set(0, 0, 0)
+        if (t < DISK_FLY) {
+          // wegvliegen: snel naar voren
+          const k = t / DISK_FLY
+          dm.visible = true
+          dm.position.set(sx, sy + k * 0.05, sz - k * 0.9)
+          dm.rotation.y = t * 60
+        } else if (t >= DISK_RELOAD_START && hasAmmo) {
+          if (!s.diskSlid) {
+            s.diskSlid = true
+            sfx.diskSlide()
+          }
+          // van onder het scherm omhoog naar de slede, met een ease-out
+          const k = Math.min(1, (t - DISK_RELOAD_START) / (DISK_RELOAD_END - DISK_RELOAD_START))
+          const e = 1 - (1 - k) ** 3
+          dm.visible = true
+          dm.position.set(sx + (1 - e) * 0.05, sy - (1 - e) * 0.6, sz + (1 - e) * 0.12)
+          dm.rotation.set((1 - e) * 0.6, (1 - e) * 4, 0)
+          if (k >= 1 && !s.diskClicked) {
+            s.diskClicked = true
+            sfx.diskClick()
+            s.kick = Math.max(s.kick, 0.15)
+          }
+        }
+        ;(dm.material as THREE.MeshBasicMaterial).color.copy((m.material as THREE.MeshBasicMaterial).color).multiplyScalar(1.15)
+      }
+    }
   })
 
   return (
     <group ref={group}>
-      <mesh ref={gun} geometry={GEOMETRY[WEAPONS[state.current.shown].id]()} renderOrder={10}>
+      <mesh ref={gun} geometry={viewGeometry(WEAPONS[state.current.shown].id)} renderOrder={10}>
         <meshBasicMaterial vertexColors depthTest={false} fog={false} />
+        {/* losse schijf op de disk launcher (beweegt mee met bob en terugslag) */}
+        <mesh ref={disk} geometry={viewDiskGeometry()} renderOrder={11} visible={false}>
+          <meshBasicMaterial vertexColors depthTest={false} fog={false} />
+        </mesh>
       </mesh>
       <mesh ref={flash} renderOrder={11} visible={false}>
         <octahedronGeometry args={[0.12, 0]} />

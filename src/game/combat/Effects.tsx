@@ -141,6 +141,18 @@ export const fx = {
     if (decal) pendingDecals.push({ pos: pos.clone().addScaledVector(normal, 0.012), normal: normal.clone(), size: rand(0.16, 0.24) })
   },
 
+  /** Metaal op steen: een flinke vonkenregen zonder kogelgat (stuiterende disk). */
+  sparks(pos: THREE.Vector3, normal: THREE.Vector3, amount = 1) {
+    const out = pos.clone().addScaledVector(normal, 0.05)
+    emit(out, normal, Math.round(22 * amount), { speed: [4, 13], spread: 1.1, life: [0.15, 0.5], size: [0.04, 0.09], gravity: 16, colors: [[2, 1.9, 1.2], [2, 1.5, 0.5], [2, 1.1, 0.3]] })
+    fx.flash(out, 1.3, [2, 1.8, 1.1], 0.08)
+  },
+
+  /** Metalen scherven als een disk na de laatste stuit kapot gaat. */
+  shards(pos: THREE.Vector3, normal: THREE.Vector3) {
+    emit(pos, normal, 8, { speed: [2, 6], spread: 1.4, life: [0.3, 0.6], size: [0.025, 0.05], gravity: 14, colors: [[0.85, 0.87, 0.9], [0.6, 0.62, 0.66]] })
+  },
+
   /** Kogel raakt vijand: bloedspetters. */
   fleshImpact(pos: THREE.Vector3, dir: THREE.Vector3, amount = 1) {
     const back = dir.clone().negate()
@@ -187,7 +199,7 @@ function resetEffects() {
 }
 
 /** Deeltjes dichter dan dit bij de camera worden niet getekend (anders vullen ze het scherm). */
-const NEAR_CULL = 0.7
+const NEAR_CULL = 1.0
 
 export function Effects() {
   const camera = useThree((s) => s.camera)

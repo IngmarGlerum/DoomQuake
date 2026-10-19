@@ -1,5 +1,5 @@
-export type WeaponId = 'pistol' | 'shotgun' | 'machinegun' | 'rocket'
-export type AmmoType = 'bullets' | 'shells' | 'rockets'
+export type WeaponId = 'pistol' | 'shotgun' | 'machinegun' | 'rocket' | 'disk'
+export type AmmoType = 'bullets' | 'shells' | 'rockets' | 'disks'
 
 export interface WeaponDef {
   id: WeaponId
@@ -84,8 +84,25 @@ export const WEAPONS: WeaponDef[] = [
     muzzle: [0.24, -0.2, -1.0],
     projectile: true,
   },
+  {
+    id: 'disk',
+    name: 'Disk Launcher',
+    slot: 5,
+    ammo: 'disks',
+    pellets: 1,
+    // schade per geraakte vijand; de schijf vliegt door vijanden heen en stuitert 5x
+    damage: [34, 44],
+    spread: 0,
+    // vuren + leeg + nieuwe schijf laden (zie de viewmodel-animatie in Weapon.tsx)
+    cooldown: 0.8,
+    auto: false,
+    kick: 0.5,
+    tracer: [0, 0, 0],
+    muzzle: [0.22, -0.17, -0.75],
+    projectile: true,
+  },
 ]
 
-export const AMMO_MAX: Record<AmmoType, number> = { bullets: 200, shells: 50, rockets: 30 }
+export const AMMO_MAX: Record<AmmoType, number> = { bullets: 200, shells: 50, rockets: 30, disks: 40 }
 
-export const AMMO_LABEL: Record<AmmoType, string> = { bullets: 'BULLETS', shells: 'SHELLS', rockets: 'ROCKETS' }
+export const AMMO_LABEL: Record<AmmoType, string> = { bullets: 'BULLETS', shells: 'SHELLS', rockets: 'ROCKETS', disks: 'DISKS' }

@@ -17,7 +17,7 @@ npm run build
 ```
 
 **Besturing:** WASD/pijltjes lopen · muis kijken · klik schieten (machine gun: ingedrukt houden) ·
-1/2/3/4 of scrollwiel: heavy pistol / shotgun / machine gun / rocket launcher · spatie springen (ingedrukt houden = bunnyhop) ·
+1–5 of scrollwiel: heavy pistol / shotgun / machine gun / rocket launcher / disk launcher · spatie springen (ingedrukt houden = bunnyhop) ·
 M kaart · N noclip · G nieuw level · Esc pauze.
 
 **Mobiel (landscape):** linkerduim = zwevende joystick · rechterduim slepen = kijken · 🔥 = schieten
@@ -57,6 +57,9 @@ lastiger). Forceren kan met `?difficulty=mobiel` of `?difficulty=normaal`.
   - demon: snel, valt aan met een beet
 - **Drops**: verslagen vijanden laten soms iets vallen (grunt: kogels/stimpack, imp: shells/stimpack,
   demon: stimpack/raket/shells); bij weinig health valt er vaker een stimpack
+- **Disk launcher** (`src/game/combat/Disks.tsx`): liggende cirkelzaag die 5× stuitert (hoek van inval = hoek van
+  uitval) en door vijanden heen snijdt; elke geraakte vijand krijgt schade. Klang + vonken tegen muren, scheurend
+  geluid + bloed bij vijanden; in het viewmodel vliegt de schijf weg en schuift er een nieuwe van onderen in
 - Positionele audio: volume op afstand en stereo-panning t.o.v. je kijkrichting
 - HUD met wapenminiaturen (offscreen gerenderd uit de 3D-modellen), geselecteerd wapen gehighlight, kills-teller
   en een rode flits bij schade

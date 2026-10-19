@@ -159,6 +159,8 @@ export const pickupGeometry = {
         { geo: cyl(0.042, 0.04), color: 0xd8b020, pos: [0.09, 0.02, 0] },
       ]),
     ),
+  disks: () =>
+    cached('disks-pickup', () => merge([...sawDiskParts(0.16, [0, 0.03, 0]), ...sawDiskParts(0.16, [0.02, 0.07, 0.01])])),
   /** losse raket rechtop, als munitie-drop */
   rocketAmmo: () =>
     cached('rocket-ammo', () => {
@@ -238,9 +240,69 @@ export const rocketGeometry = () =>
     ]),
   )
 
+/** Liggende cirkelzaag met straal R (as = Y), als losse onderdelen. */
+function sawDiskParts(R: number, at: [number, number, number] = [0, 0, 0]): Part[] {
+  const [x, y, z] = at
+  const h = Math.max(0.012, R * 0.11)
+  const parts: Part[] = [
+    { geo: new THREE.CylinderGeometry(R, R, h, 16), color: 0xb8bec8, pos: [x, y, z] },
+    { geo: new THREE.CylinderGeometry(R * 0.68, R * 0.68, h * 1.15, 16), color: 0x8a9098, pos: [x, y, z] },
+    { geo: new THREE.CylinderGeometry(R * 0.26, R * 0.26, h * 1.8, 8), color: 0x3a3e44, pos: [x, y, z] },
+  ]
+  const teeth = 14
+  for (let i = 0; i < teeth; i++) {
+    const a = (i / teeth) * Math.PI * 2
+    const r = R + R * 0.08
+    // kegeltje plat in het vlak, punt naar buiten en een beetje schuin (zaagtand)
+    parts.push({
+      geo: cone(R * 0.12, R * 0.26),
+      color: 0xe0e4ea,
+      pos: [x + Math.cos(a) * r, y, z + Math.sin(a) * r],
+      rot: [0, -a - 0.5, -Math.PI / 2],
+    })
+  }
+  return parts
+}
+
+/** Projectiel van de disk launcher. */
+export const sawDiskGeometry = () => cached('saw-disk', () => merge(sawDiskParts(0.28)))
+
+/** Schijf zoals hij in het wapen ligt (viewmodel-schaal). */
+export const viewDiskGeometry = () => cached('saw-disk-view', () => merge(sawDiskParts(0.1)))
+
+const DISK_SEAT: [number, number, number] = [0, 0.04, -0.2]
+
+function diskLauncherParts(): Part[] {
+  return [
+    // vlakke slede waar de schijf op ligt
+    { geo: box(0.22, 0.05, 0.56), color: 0x3a3f48, pos: [0, -0.02, -0.18] },
+    { geo: box(0.025, 0.08, 0.5), color: 0x6a707a, pos: [-0.12, 0.02, -0.2] },
+    { geo: box(0.025, 0.08, 0.5), color: 0x6a707a, pos: [0.12, 0.02, -0.2] },
+    // oranje geleiders voorop
+    { geo: box(0.03, 0.06, 0.12), color: 0xc86018, pos: [-0.11, 0.03, -0.5] },
+    { geo: box(0.03, 0.06, 0.12), color: 0xc86018, pos: [0.11, 0.03, -0.5] },
+    // behuizing achter met een blauw lichtje
+    { geo: box(0.2, 0.11, 0.16), color: 0x2e3238, pos: [0, 0.02, 0.12] },
+    { geo: box(0.03, 0.02, 0.02), color: 0x30c0ff, pos: [-0.06, 0.08, 0.04] },
+    { geo: box(0.03, 0.02, 0.02), color: 0x30c0ff, pos: [0.06, 0.08, 0.04] },
+    // magazijn met reserveschijven onder de slede
+    { geo: cyl(0.09, 0.12), color: 0x50565e, pos: [0, -0.1, -0.14] },
+    // handgreep
+    { geo: box(0.06, 0.18, 0.08), color: 0x2a1c12, pos: [0, -0.14, 0.12], rot: [0.25, 0, 0] },
+  ]
+}
+
+/** Wapen zonder schijf (het viewmodel animeert de schijf los). */
+export const diskLauncherBodyGeometry = () => cached('disk-launcher-body', () => merge(diskLauncherParts()))
+
+/** Positie van de schijf op de slede, in viewmodel-coördinaten t.o.v. het wapen. */
+export const diskSeat = DISK_SEAT
+
 export const weaponGeometry: Record<WeaponId, () => THREE.BufferGeometry> = {
   pistol: pistolGeometry,
   shotgun: shotgunGeometry,
   machinegun: machinegunGeometry,
   rocket: rocketLauncherGeometry,
+  // icoon en wisselanimatie: wapen mét schijf
+  disk: () => cached('disk-launcher', () => merge([...diskLauncherParts(), ...sawDiskParts(0.1, DISK_SEAT)])),
 }

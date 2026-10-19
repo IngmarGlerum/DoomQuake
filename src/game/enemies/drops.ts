@@ -13,11 +13,13 @@ const DROP_TABLE: Record<EnemyKind, [DropKind, number][]> = {
     ['shells', 0.35],
     ['stimpack', 0.25],
     ['clip', 0.1],
+    ['disks', 0.1],
   ],
   demon: [
     ['stimpack', 0.35],
     ['rocket', 0.3],
     ['shells', 0.2],
+    ['disks', 0.1],
   ],
 }
 

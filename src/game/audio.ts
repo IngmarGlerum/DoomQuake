@@ -129,6 +129,43 @@ export const sfx = {
     noise(o, 0.25, 1500, 150, 0.6)
     tone(o, 'sawtooth', 90, 40, 0.3, 0.25)
   }),
+  /** metalige "piew!" bij het lanceren van een disk */
+  disk: sound(0.9, (o) => {
+    tone(o, 'square', 2400, 500, 0.22, 0.18)
+    tone(o, 'sine', 3800, 900, 0.18, 0.15)
+    noise(o, 0.08, 7000, 2500, 0.3, 'highpass')
+  }),
+  /** metalige "klang!" als de disk tegen een muur stuitert */
+  clang: sound(0.8, (o) => {
+    // inharmonische boventonen klinken als metaal
+    for (const [f, g, d] of [
+      [523, 0.22, 0.5],
+      [1312, 0.16, 0.4],
+      [2205, 0.12, 0.3],
+      [3517, 0.08, 0.22],
+    ] as const) {
+      const jitter = 1 + (Math.random() - 0.5) * 0.06
+      tone(o, 'sine', f * jitter, f * jitter * 0.98, d, g)
+    }
+    noise(o, 0.05, 8000, 3000, 0.4, 'highpass')
+  }),
+  /** vlees dat door een zaagblad wordt opengereten */
+  rend: sound(0.9, (o) => {
+    noise(o, 0.28, 900, 250, 0.8, 'bandpass')
+    noise(o, 0.18, 3000, 600, 0.4, 'lowpass', 0.03)
+    tone(o, 'sawtooth', 180, 70, 0.25, 0.25)
+  }),
+  /** nieuwe schijf schuift in het wapen... */
+  diskSlide: sound(0.6, (o) => {
+    noise(o, 0.26, 600, 3500, 0.35, 'bandpass')
+    tone(o, 'triangle', 300, 700, 0.24, 0.06)
+  }),
+  /** ...en klikt vast */
+  diskClick: sound(0.8, (o) => {
+    tone(o, 'square', 1800, 1400, 0.04, 0.2)
+    noise(o, 0.04, 6000, 2000, 0.4, 'highpass')
+    tone(o, 'sine', 900, 880, 0.12, 0.1, 0.02)
+  }),
   click: sound(0.6, (o) => tone(o, 'square', 900, 700, 0.04, 0.1)),
   weaponSwitch: sound(0.5, (o) => {
     noise(o, 0.06, 2500, 1500, 0.3, 'bandpass')
