@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { WEAPONS, type WeaponId } from '../combat/weapons'
-import { buildBeretta } from '../render/beretta'
+import { BERETTA_SCALE, buildBeretta } from '../render/beretta'
 import { diskLauncherBodyGeometry, viewDiskGeometry, weaponGeometry } from '../render/models'
 import { vm } from './viewmodel'
 
@@ -40,7 +40,30 @@ export function ViewmodelCanvas() {
 }
 
 /** Houding van de Beretta t.o.v. het wapenpunt: schuin naar binnen, zodat je de linkerkant en bovenkant ziet. */
-const BERETTA_POSE = { position: [-0.04, 0.1, 0.1] as [number, number, number], rotation: [0.07, 0.55, -0.1] as [number, number, number], scale: 1.15 }
+const BERETTA_POSE = {
+  /** t.o.v. het wapenpunt (vm.pos in rust) */
+  position: new THREE.Vector3(-0.035, 0.115, 0.09),
+  scale: 1.35,
+  /** kanteling om de eigen loop-as (laat de linkerkant zien zonder de richting te veranderen) */
+  roll: 0.5,
+  /** afstand waarop de loop het kruisje snijdt */
+  convergence: 12,
+}
+
+/**
+ * Draai het pistool zo dat de loop vanuit de rustpositie precies naar het kruisje
+ * (midden van het scherm) wijst, en kantel het daarna om zijn eigen loop-as.
+ */
+function berettaQuaternion(muzzleOffset: THREE.Vector3): THREE.Quaternion {
+  const gun = new THREE.Vector3(0.22, -0.24, -0.35).add(BERETTA_POSE.position)
+  // de loop-as ligt iets onder de oorsprong van het model
+  const axis = gun.clone().add(new THREE.Vector3(0, muzzleOffset.y, 0))
+  const target = new THREE.Vector3(0, 0, -BERETTA_POSE.convergence)
+  const dir = target.sub(axis).normalize()
+  const aim = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), dir)
+  const roll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), BERETTA_POSE.roll)
+  return aim.multiply(roll)
+}
 
 /** In het viewmodel ligt de schijf los op de launcher, zodat hij kan wegvliegen en herladen. */
 const simpleGeometry = (id: WeaponId) => (id === 'disk' ? diskLauncherBodyGeometry() : weaponGeometry[id]())
@@ -49,6 +72,10 @@ function ViewmodelScene() {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
   const beretta = useMemo(() => buildBeretta(), [])
+  const poseQuat = useMemo(
+    () => berettaQuaternion(beretta.muzzle.clone().multiplyScalar(BERETTA_SCALE * BERETTA_POSE.scale)),
+    [beretta],
+  )
   const root = useRef<THREE.Group>(null)
   const simple = useRef<THREE.Mesh>(null)
   const disk = useRef<THREE.Mesh>(null)
@@ -136,7 +163,7 @@ function ViewmodelScene() {
 
       <group ref={root}>
         {/* Beretta: oorsprong = achterkant bovenop de slede; licht naar binnen gedraaid */}
-        <group position={BERETTA_POSE.position} rotation={BERETTA_POSE.rotation} scale={BERETTA_POSE.scale}>
+        <group position={BERETTA_POSE.position} quaternion={poseQuat} scale={BERETTA_POSE.scale}>
           <primitive object={beretta.root} />
         </group>
         <mesh ref={simple} visible={false}>
