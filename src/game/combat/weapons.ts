@@ -38,7 +38,7 @@ export const WEAPONS: WeaponDef[] = [
     auto: false,
     kick: 0.7,
     tracer: [1.6, 1.3, 0.6],
-    muzzle: [0.22, -0.22, -0.72],
+    muzzle: [0.18, -0.19, -0.71],
   },
   {
     id: 'shotgun',

@@ -60,6 +60,12 @@ lastiger). Forceren kan met `?difficulty=mobiel` of `?difficulty=normaal`.
 - **Disk launcher** (`src/game/combat/Disks.tsx`): liggende cirkelzaag die 5× stuitert (hoek van inval = hoek van
   uitval) en door vijanden heen snijdt; elke geraakte vijand krijgt schade. Klang + vonken tegen muren, scheurend
   geluid + bloed bij vijanden; in het viewmodel vliegt de schijf weg en schuift er een nieuwe van onderen in
+- **Beretta-pistool** (`src/game/render/beretta.ts`): gedetailleerd model uit geëxtrudeerde zijprofielen met
+  afgeronde randen (open slede met zichtbare loop, haan, decocker, vizieren met witte stippen, trekkerbeugel),
+  procedurele textures met normal maps (gestraald staal, kartels, gravure "PIETRO BERETTA", geruite grip met
+  medaillon en schroeven) en een terugslaande slede bij elk schot
+- **Viewmodel-laag** (`src/game/player/ViewmodelCanvas.tsx`): wapens worden in een eigen canvas op hogere resolutie
+  getekend, met belichting die meekleurt met het level en reflecties; de wereld blijft retro-pixelig
 - Positionele audio: volume op afstand en stereo-panning t.o.v. je kijkrichting
 - HUD met wapenminiaturen (offscreen gerenderd uit de 3D-modellen), geselecteerd wapen gehighlight, kills-teller
   en een rode flits bij schade

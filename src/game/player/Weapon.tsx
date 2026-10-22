@@ -10,9 +10,10 @@ import { WEAPONS, type AmmoType, type WeaponDef, type WeaponId } from '../combat
 import { damageEnemy } from '../enemies/damage'
 import { spawnRocket } from '../enemies/Projectiles'
 import type { Lighting, RGB } from '../render/lighting'
-import { diskLauncherBodyGeometry, diskSeat, viewDiskGeometry, weaponGeometry as GEOMETRY } from '../render/models'
+import { diskSeat } from '../render/models'
 import { player, useGame } from '../store'
 import { fireButton } from './input'
+import { vm } from './viewmodel'
 
 /** hoeveel de camera omhoog schopt per schot */
 const VIEW_PUNCH: Record<WeaponId, number> = { pistol: 0.014, shotgun: 0.03, machinegun: 0.005, rocket: 0.04, disk: 0.012 }
@@ -21,9 +22,6 @@ const AMMO_NAME: Record<AmmoType, string> = { bullets: 'kogels', shells: 'shells
 const MAX_RANGE = 120
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a)
-
-/** In het viewmodel ligt de schijf los op de launcher, zodat hij kan wegvliegen en herladen. */
-const viewGeometry = (id: WeaponId) => (id === 'disk' ? diskLauncherBodyGeometry() : GEOMETRY[id]())
 
 /** Tijdlijn van de disk-animatie (seconden na het schot). */
 const DISK_FLY = 0.07
@@ -36,9 +34,6 @@ const DISK_RELOAD_END = 0.62
  */
 export function Weapon({ lighting }: { lighting: Lighting }) {
   const camera = useThree((s) => s.camera)
-  const group = useRef<THREE.Group>(null)
-  const gun = useRef<THREE.Mesh>(null)
-  const flash = useRef<THREE.Mesh>(null)
   const state = useRef({
     kick: 0,
     flash: 0,
@@ -54,9 +49,10 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     diskT: 99,
     diskSlid: true,
     diskClicked: true,
+    /** tijd sinds het laatste pistoolschot (slede-animatie) */
+    slideT: 99,
   })
-  const disk = useRef<THREE.Mesh>(null)
-  if (import.meta.env.DEV) Object.assign(window, { __weapon: { state: state.current, disk } })
+  if (import.meta.env.DEV) Object.assign(window, { __weapon: { state: state.current, vm } })
   const light = useRef<RGB>([0, 0, 0])
 
   useEffect(() => {
@@ -100,7 +96,8 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     camera.getWorldDirection(t.forward)
     t.right.setFromMatrixColumn(camera.matrixWorld, 0)
     t.up.setFromMatrixColumn(camera.matrixWorld, 1)
-    const muzzle = camera.localToWorld(t.muzzle.set(...def.muzzle))
+    const local = def.id === 'pistol' ? vm.pistolMuzzle : t.muzzle.set(...def.muzzle)
+    const muzzle = camera.localToWorld(t.muzzle.copy(local))
     runtime.lastShot = { x: camera.position.x, z: camera.position.z, time: performance.now() }
 
     sfx[def.id]()
@@ -122,6 +119,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     const s = state.current
     s.kick = def.kick
     s.flash = 0.05
+    if (def.id === 'pistol') s.slideT = 0
     camera.rotation.x = Math.min(Math.PI / 2, camera.rotation.x + VIEW_PUNCH[def.id] * rand(0.7, 1.2))
     camera.rotation.y += rand(-0.3, 0.3) * VIEW_PUNCH[def.id]
   }
@@ -187,9 +185,6 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
   }
 
   useFrame((_, delta) => {
-    const g = group.current
-    const m = gun.current
-    if (!g || !m || !flash.current) return
     const s = state.current
     const game = useGame.getState()
 
@@ -207,8 +202,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
       s.lower = Math.max(0, s.lower - delta / SWITCH_TIME)
     }
     const def = WEAPONS[s.shown]
-    const geometry = viewGeometry(def.id)
-    if (m.geometry !== geometry) m.geometry = geometry
+    vm.weapon = s.shown
 
     s.cooldown = Math.max(0, s.cooldown - delta)
     const ready = game.locked && game.status === 'playing' && wanted === s.shown && s.lower < 0.2
@@ -233,78 +227,58 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     if (player.grounded) s.bob += delta * player.speed * 0.9
     const bobAmount = Math.min(player.speed / 10, 1)
 
-    g.position.copy(camera.position)
-    g.quaternion.copy(camera.quaternion)
-    m.position.set(
+    vm.pos.set(
       0.22 + Math.cos(s.bob) * 0.025 * bobAmount,
       -0.24 + Math.abs(Math.sin(s.bob)) * 0.02 * bobAmount + s.kick * 0.03 - s.lower * 0.45,
       -0.35 + s.kick * 0.1,
     )
-    m.rotation.x = s.kick * 0.3
-    flash.current.visible = s.flash > 0
-    flash.current.position.set(def.muzzle[0], def.muzzle[1], def.muzzle[2])
-    flash.current.rotation.z = Math.random() * Math.PI
+    vm.rotX = s.kick * 0.3
+    vm.flash = s.flash
+    vm.flashPos.set(def.muzzle[0], def.muzzle[1], def.muzzle[2])
+
+    // pistool: slede schiet naar achteren en veert terug
+    s.slideT += delta
+    vm.recoil = s.slideT < 0.035 ? s.slideT / 0.035 : Math.max(0, 1 - (s.slideT - 0.035) / 0.09)
 
     lighting.sample(camera.position.x, camera.position.y, camera.position.z, undefined, light.current)
-    const boost = s.flash > 0 ? 1.2 : 0
     const c = light.current
-    ;(m.material as THREE.MeshBasicMaterial).color.setRGB(
-      Math.min(1.4, c[0] + 0.15 + boost),
-      Math.min(1.4, c[1] + 0.15 + boost),
-      Math.min(1.4, c[2] + 0.15 + boost),
-    )
+    vm.light.setRGB(c[0], c[1], c[2])
+    const boost = s.flash > 0 ? 1.2 : 0
+    vm.tint.setRGB(Math.min(1.4, c[0] + 0.15 + boost), Math.min(1.4, c[1] + 0.15 + boost), Math.min(1.4, c[2] + 0.15 + boost))
 
     // disk launcher: schijf vliegt weg, launcher is even leeg, nieuwe schijf schuift van onder in beeld
-    const dm = disk.current
-    if (dm) {
-      dm.visible = false
-      if (def.id === 'disk') {
-        s.diskT += delta
-        const t = s.diskT
-        const hasAmmo = game.ammo.disks > 0
-        const [sx, sy, sz] = diskSeat
-        dm.rotation.set(0, 0, 0)
-        if (t < DISK_FLY) {
-          // wegvliegen: snel naar voren
-          const k = t / DISK_FLY
-          dm.visible = true
-          dm.position.set(sx, sy + k * 0.05, sz - k * 0.9)
-          dm.rotation.y = t * 60
-        } else if (t >= DISK_RELOAD_START && hasAmmo) {
-          if (!s.diskSlid) {
-            s.diskSlid = true
-            sfx.diskSlide()
-          }
-          // van onder het scherm omhoog naar de slede, met een ease-out
-          const k = Math.min(1, (t - DISK_RELOAD_START) / (DISK_RELOAD_END - DISK_RELOAD_START))
-          const e = 1 - (1 - k) ** 3
-          dm.visible = true
-          dm.position.set(sx + (1 - e) * 0.05, sy - (1 - e) * 0.6, sz + (1 - e) * 0.12)
-          dm.rotation.set((1 - e) * 0.6, (1 - e) * 4, 0)
-          if (k >= 1 && !s.diskClicked) {
-            s.diskClicked = true
-            sfx.diskClick()
-            s.kick = Math.max(s.kick, 0.15)
-          }
+    vm.disk.visible = false
+    if (def.id === 'disk') {
+      s.diskT += delta
+      const t = s.diskT
+      const hasAmmo = game.ammo.disks > 0
+      const [sx, sy, sz] = diskSeat
+      vm.disk.rot.set(0, 0, 0)
+      if (t < DISK_FLY) {
+        // wegvliegen: snel naar voren
+        const k = t / DISK_FLY
+        vm.disk.visible = true
+        vm.disk.pos.set(sx, sy + k * 0.05, sz - k * 0.9)
+        vm.disk.rot.y = t * 60
+      } else if (t >= DISK_RELOAD_START && hasAmmo) {
+        if (!s.diskSlid) {
+          s.diskSlid = true
+          sfx.diskSlide()
         }
-        ;(dm.material as THREE.MeshBasicMaterial).color.copy((m.material as THREE.MeshBasicMaterial).color).multiplyScalar(1.15)
+        // van onder het scherm omhoog naar de slede, met een ease-out
+        const k = Math.min(1, (t - DISK_RELOAD_START) / (DISK_RELOAD_END - DISK_RELOAD_START))
+        const e = 1 - (1 - k) ** 3
+        vm.disk.visible = true
+        vm.disk.pos.set(sx + (1 - e) * 0.05, sy - (1 - e) * 0.6, sz + (1 - e) * 0.12)
+        vm.disk.rot.set((1 - e) * 0.6, (1 - e) * 4, 0)
+        if (k >= 1 && !s.diskClicked) {
+          s.diskClicked = true
+          sfx.diskClick()
+          s.kick = Math.max(s.kick, 0.15)
+        }
       }
     }
   })
 
-  return (
-    <group ref={group}>
-      <mesh ref={gun} geometry={viewGeometry(WEAPONS[state.current.shown].id)} renderOrder={10}>
-        <meshBasicMaterial vertexColors depthTest={false} fog={false} />
-        {/* losse schijf op de disk launcher (beweegt mee met bob en terugslag) */}
-        <mesh ref={disk} geometry={viewDiskGeometry()} renderOrder={11} visible={false}>
-          <meshBasicMaterial vertexColors depthTest={false} fog={false} />
-        </mesh>
-      </mesh>
-      <mesh ref={flash} renderOrder={11} visible={false}>
-        <octahedronGeometry args={[0.12, 0]} />
-        <meshBasicMaterial color={[2, 1.6, 0.5]} depthTest={false} fog={false} />
-      </mesh>
-    </group>
-  )
+  return null
 }

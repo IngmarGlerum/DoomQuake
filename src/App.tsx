@@ -12,6 +12,7 @@ import { generateLevel } from './game/level/generate'
 import { LevelMesh } from './game/level/LevelMesh'
 import { Things } from './game/level/Things'
 import { Player } from './game/player/Player'
+import { ViewmodelCanvas } from './game/player/ViewmodelCanvas'
 import { Weapon } from './game/player/Weapon'
 import { createLighting } from './game/render/lighting'
 import { useGame } from './game/store'
@@ -88,6 +89,7 @@ export default function App() {
           />
         )}
       </Canvas>
+      <ViewmodelCanvas />
       <Minimap level={level} />
       <Hud level={level} />
       {isTouchDevice && <TouchControls />}
