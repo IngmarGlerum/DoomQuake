@@ -44,8 +44,8 @@ const BERETTA_POSE = {
   /** t.o.v. het wapenpunt (vm.pos in rust) */
   position: new THREE.Vector3(-0.035, 0.115, 0.09),
   scale: 1.35,
-  /** kanteling om de eigen loop-as (laat de linkerkant zien zonder de richting te veranderen) */
-  roll: 0.5,
+  /** kanteling om de eigen loop-as (0 = rechtop); verandert de richting van de loop niet */
+  roll: 0,
   /** afstand waarop de loop het kruisje snijdt */
   convergence: 12,
 }
