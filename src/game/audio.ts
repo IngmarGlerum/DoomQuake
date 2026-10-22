@@ -1,3 +1,5 @@
+import pistolM4a from '../assets/sounds/pistol.m4a?url'
+import pistolOgg from '../assets/sounds/pistol.ogg?url'
 import { player } from './store'
 
 /**
@@ -102,6 +104,41 @@ function tone(out: AudioNode, type: OscillatorType, from: number, to: number, du
   osc.stop(t + duration)
 }
 
+// ---------- samples (opgenomen geluiden) ----------
+
+const samples = new Map<string, AudioBuffer>()
+
+/** Kies Ogg/Opus waar mogelijk, anders AAC (oudere Safari/iPhone). */
+const canOpus = typeof Audio !== 'undefined' && new Audio().canPlayType('audio/ogg; codecs=opus') !== ''
+
+async function loadSample(name: string, urls: { ogg: string; m4a: string }) {
+  try {
+    const res = await fetch(canOpus ? urls.ogg : urls.m4a)
+    const data = await res.arrayBuffer()
+    // decoderen kan al vóór de eerste klik, met een offline context; buffers zijn overal bruikbaar
+    const decoder = new OfflineAudioContext(2, 1, 48000)
+    samples.set(name, await decoder.decodeAudioData(data))
+  } catch (err) {
+    console.warn(`Kon geluid '${name}' niet laden; synthgeluid wordt gebruikt`, err)
+  }
+}
+
+if (typeof window !== 'undefined') void loadSample('pistol', { ogg: pistolOgg, m4a: pistolM4a })
+
+/** Speel een sample af; false als hij (nog) niet geladen is. */
+function playSample(name: string, pos: Pos | undefined, volume: number, pitchJitter = 0) {
+  const buffer = samples.get(name)
+  if (!buffer) return false
+  const out = output(pos, volume)
+  if (!out) return true
+  const src = audio().createBufferSource()
+  src.buffer = buffer
+  src.playbackRate.value = 1 + (Math.random() * 2 - 1) * pitchJitter
+  src.connect(out)
+  src.start()
+  return true
+}
+
 /** Maakt een geluidsfunctie met optionele positie. */
 const sound =
   (volume: number, play: (out: AudioNode) => void) =>
@@ -110,12 +147,18 @@ const sound =
     if (out) play(out)
   }
 
+const pistolSynth = sound(0.9, (o) => {
+  noise(o, 0.22, 4000, 300, 0.7)
+  tone(o, 'square', 180, 50, 0.12, 0.35)
+})
+
 export const sfx = {
   // wapens van de speler
-  pistol: sound(0.9, (o) => {
-    noise(o, 0.22, 4000, 300, 0.7)
-    tone(o, 'square', 180, 50, 0.12, 0.35)
-  }),
+  /** opgenomen pistoolschot; valt terug op een synthgeluid tot de sample geladen is */
+  pistol: (pos?: Pos) => {
+    if (playSample('pistol', pos, 1, 0.04)) return
+    pistolSynth(pos)
+  },
   shotgun: sound(1, (o) => {
     noise(o, 0.45, 3000, 120, 0.6)
     tone(o, 'square', 120, 40, 0.2, 0.3)

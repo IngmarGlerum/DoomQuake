@@ -70,7 +70,8 @@ lastiger). Forceren kan met `?difficulty=mobiel` of `?difficulty=normaal`.
 - HUD met wapenminiaturen (offscreen gerenderd uit de 3D-modellen), geselecteerd wapen gehighlight, kills-teller
   en een rode flits bij schade
 - Low-poly placeholder-vijanden (grunt, imp, demon), pickups, sleutel, deuren, exit, automap
-- Gesynthetiseerde geluidseffecten (WebAudio), dus geen audiobestanden nodig
+- Gesynthetiseerde geluidseffecten (WebAudio); het pistool gebruikt een opgenomen sample
+  (`src/assets/sounds/pistol.ogg`, met `.m4a` als terugval voor oudere Safari)
 
 ## Architectuur
 
