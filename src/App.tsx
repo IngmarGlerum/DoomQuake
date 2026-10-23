@@ -8,10 +8,13 @@ import { Drops } from './game/enemies/Drops'
 import { Enemies } from './game/enemies/Enemies'
 import { Projectiles } from './game/enemies/Projectiles'
 import { Doors } from './game/level/Doors'
-import { generateLevel } from './game/level/generate'
+import { LEVELS } from './game/level/levels'
 import { LevelMesh } from './game/level/LevelMesh'
+import { Props } from './game/level/Props'
+import { SlideDoors } from './game/level/SlideDoors'
 import { Things } from './game/level/Things'
 import { Player } from './game/player/Player'
+import { pointerLock } from './game/player/pointerLock'
 import { ViewmodelCanvas } from './game/player/ViewmodelCanvas'
 import { Weapon } from './game/player/Weapon'
 import { createLighting } from './game/render/lighting'
@@ -37,8 +40,9 @@ function useRetroDpr() {
 
 export default function App() {
   const seed = useGame((s) => s.seed)
+  const levelKind = useGame((s) => s.levelKind)
   const run = useGame((s) => s.run)
-  const level = useMemo(() => generateLevel(seed), [seed])
+  const level = useMemo(() => LEVELS[levelKind].generate(seed), [levelKind, seed])
   const lighting = useMemo(() => createLighting(level), [level])
   const dpr = useRetroDpr()
 
@@ -59,7 +63,7 @@ export default function App() {
   return (
     <>
       <Canvas
-        key={`${seed}-${run}`}
+        key={`${levelKind}-${seed}-${run}`}
         className="game"
         dpr={dpr}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
@@ -71,6 +75,8 @@ export default function App() {
           <Physics gravity={[0, 0, 0]}>
             <LevelMesh level={level} lighting={lighting} />
             <Doors level={level} lighting={lighting} />
+            <SlideDoors level={level} lighting={lighting} />
+            <Props level={level} lighting={lighting} />
             <Player level={level} />
             <Enemies level={level} lighting={lighting} />
             <Projectiles />
@@ -84,6 +90,11 @@ export default function App() {
         {/* op touchscreens geen pointer lock: daar kijk je door te slepen */}
         {!isTouchDevice && (
           <PointerLockControls
+            // niet bij elke klik vergrendelen: dat doet de SPELEN-knop (zie pointerLock.ts)
+            selector="#no-auto-pointer-lock"
+            ref={(c) => {
+              if (c) pointerLock.lock = () => c.lock()
+            }}
             onLock={() => useGame.getState().setLocked(true)}
             onUnlock={() => useGame.getState().setLocked(false)}
           />

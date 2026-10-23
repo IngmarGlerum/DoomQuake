@@ -6,7 +6,7 @@ export const STEP = 0.25
 export const MAX_STEP = 0.5
 export const PLAYER_HEIGHT = 1.8
 
-export type Theme = 'tech' | 'brick' | 'hell'
+export type Theme = 'tech' | 'brick' | 'hell' | 'cave' | 'base'
 
 export interface Cell {
   solid: boolean
@@ -21,6 +21,10 @@ export interface Cell {
   liquid: boolean
   door: boolean
   theme: Theme
+  /** automatische schuifdeur (gaat vanzelf open, niet op slot) */
+  slide?: boolean
+  /** cel waar een groot decorstuk staat (serverkast, terminal, kooi...) */
+  prop?: boolean
 }
 
 export type RoomFeature = 'none' | 'pillars' | 'dais' | 'pit'
@@ -37,7 +41,31 @@ export interface Room {
   feature: RoomFeature
   /** afstand (in kamers) vanaf de startkamer in de spanning tree */
   depth: number
+  /** grotbasis: natuurlijke grot of gebouwde kamer, en waar de kamer voor dient */
+  kind?: 'cave' | 'base'
+  purpose?: RoomPurpose
 }
+
+export type RoomPurpose = 'server' | 'control' | 'lab' | 'storage' | 'reactor'
+
+/** Decorstukken in de grotbasis. Posities in wereldcoördinaten; `rot` = draaiing om de y-as (voorkant = +z). */
+export type Prop =
+  | {
+      kind: 'rack' | 'terminal' | 'switchboard' | 'cage' | 'crate' | 'lamp'
+      x: number
+      y: number
+      z: number
+      rot: number
+      variant: number
+    }
+  | {
+      kind: 'pipe' | 'cable'
+      points: [number, number, number][]
+      radius: number
+      color: number
+    }
+
+export type LevelKind = 'outpost' | 'caves'
 
 export type EnemyKind = 'grunt' | 'imp' | 'demon'
 export type ThingKind = 'enemy' | 'health' | 'ammo' | 'armor' | 'key' | 'exit'
@@ -75,6 +103,11 @@ export interface Level {
   startRoom: number
   keyRoom: number
   exitRoom: number
+  kind?: LevelKind
+  /** decorstukken (alleen in de grotbasis) */
+  props?: Prop[]
+  /** hoeveel muurhoeken in grotten willekeurig verschoven worden (meters), voor een rotsachtig effect */
+  cornerJitter?: number
 }
 
 export const cellIndex = (lvl: { width: number }, x: number, y: number) => y * lvl.width + x

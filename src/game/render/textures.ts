@@ -193,6 +193,73 @@ const exitSign: Painter = (px) => {
   })
 }
 
+/** Metalen roostervloer (grating) met donkere gaten. */
+const grating =
+  (base: RGB): Painter =>
+  (px, rng) => {
+    const n = valueNoise(rng, 8)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const lx = x % 8
+        const ly = y % 8
+        const bar = lx < 2 || ly < 2
+        const edge = lx === 0 || ly === 0
+        let c = bar ? shade(base, 1.05 + n(x, y) * 0.2) : shade(base, 0.18 + rng.next() * 0.05)
+        if (edge) c = shade(base, 1.35)
+        // vegen olie/roest
+        if (n(x, y) > 0.78) c = shade(c, 0.75)
+        px(x, y, c)
+      }
+    }
+  }
+
+/** Diagonale zwart-gele gevarenstrepen. */
+const hazard: Painter = (px, rng) => {
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const stripe = Math.floor((x + y) / 8) % 2 === 0
+      const wear = rng.next() < 0.06 ? 0.7 : 1
+      px(x, y, stripe ? shade(hex(0xe0b818), wear * (0.9 + rng.next() * 0.1)) : shade(hex(0x1a1a1a), 0.9 + rng.next() * 0.2))
+    }
+  }
+}
+
+/** Schuifdeurpaneel: metaal met ribbels en een zwart-gele rand. */
+const slideDoor: Painter = (px, rng) => {
+  const n = valueNoise(rng, 8)
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const border = x < 6 || x > SIZE - 7 || y < 6 || y > SIZE - 7
+      let c: RGB
+      if (border) {
+        c = Math.floor((x + y) / 6) % 2 === 0 ? hex(0xe0b818) : hex(0x161616)
+      } else {
+        c = shade(hex(0x6c7480), 0.8 + n(x, y) * 0.25 + rng.next() * 0.05)
+        if (y % 12 === 0) c = shade(hex(0x6c7480), 0.5)
+        if (y % 12 === 1) c = shade(hex(0x6c7480), 1.25)
+        // klein raampje bovenin
+        if (y > 12 && y < 24 && x > 22 && x < 42) c = (x + y) % 5 === 0 ? hex(0x8ab4c8) : hex(0x203038)
+      }
+      px(x, y, c)
+    }
+  }
+}
+
+/** Groen terminalscherm met regels "tekst" en scanlines. */
+const terminalScreen: Painter = (px, rng) => {
+  for (let y = 0; y < SIZE; y++) {
+    const line = Math.floor(y / 5)
+    const len = 10 + ((line * 37) % 40)
+    for (let x = 0; x < SIZE; x++) {
+      let c: RGB = [6, 18, 8]
+      const inText = y % 5 < 3 && x > 3 && x < 3 + len && rng.next() > 0.25
+      if (inText) c = [60 + rng.next() * 40, 220, 90]
+      if (y % 2 === 0) c = shade(c, 0.75)
+      px(x, y, c)
+    }
+  }
+}
+
 export type TextureName =
   | 'tech_wall'
   | 'tech_floor'
@@ -203,6 +270,15 @@ export type TextureName =
   | 'hell_wall'
   | 'hell_floor'
   | 'hell_ceil'
+  | 'cave_wall'
+  | 'cave_floor'
+  | 'cave_ceil'
+  | 'base_wall'
+  | 'base_floor'
+  | 'base_ceil'
+  | 'hazard'
+  | 'slidedoor'
+  | 'screen'
   | 'step'
   | 'liquid'
   | 'door'
@@ -218,6 +294,15 @@ const PAINTERS: Record<TextureName, Painter> = {
   hell_wall: rock(hex(0x9a3020), hex(0x200806)),
   hell_floor: rock(hex(0x5a2a1c), hex(0x100404)),
   hell_ceil: rock(hex(0x4a1a12), hex(0x080202)),
+  cave_wall: rock(hex(0x6e6658), hex(0x18140f)),
+  cave_floor: rock(hex(0x4c463c), hex(0x120f0b)),
+  cave_ceil: rock(hex(0x3c3730), hex(0x0c0a08)),
+  base_wall: panels(hex(0x4c535c), hex(0xc8a020)),
+  base_floor: grating(hex(0x5a6068)),
+  base_ceil: panels(hex(0x34383e), hex(0x58606c), 32),
+  hazard,
+  slidedoor: slideDoor,
+  screen: terminalScreen,
   step: treadPlate(hex(0x707070)),
   liquid,
   door: door(hex(0x6a6e78), hex(0xd02020)),

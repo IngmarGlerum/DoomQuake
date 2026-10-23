@@ -268,6 +268,18 @@ export const sfx = {
     tone(o, 'square', 660, 1320, 0.1, 0.12, 0.07)
   }),
   key: sound(1, (o) => [523, 659, 784, 1046].forEach((f, i) => tone(o, 'square', f, f, 0.12, 0.12, i * 0.08))),
+  /** pneumatische schuifdeur: sissen + motortje */
+  slideOpen: sound(0.8, (o) => {
+    noise(o, 0.35, 5000, 1200, 0.35, 'bandpass')
+    tone(o, 'sawtooth', 110, 230, 0.32, 0.06)
+  }),
+  /** schuifdeur dicht: sissen en een doffe klap aan het eind */
+  slideClose: sound(0.8, (o) => {
+    noise(o, 0.45, 3500, 900, 0.3, 'bandpass')
+    tone(o, 'sawtooth', 220, 110, 0.4, 0.05)
+    tone(o, 'sine', 90, 50, 0.18, 0.35, 0.5)
+    noise(o, 0.08, 900, 200, 0.4, 'lowpass', 0.5)
+  }),
   door: sound(1, (o) => {
     noise(o, 1.0, 500, 120, 0.25)
     tone(o, 'sawtooth', 60, 90, 1.0, 0.1)

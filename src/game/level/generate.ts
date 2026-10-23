@@ -24,12 +24,16 @@ const THEME_LIGHT: Record<Theme, [number, number, number]> = {
   tech: [0.8, 0.88, 1.0],
   brick: [1.0, 0.82, 0.55],
   hell: [1.0, 0.42, 0.28],
+  cave: [1.0, 0.72, 0.4],
+  base: [0.75, 0.85, 1.0],
 }
 
 const THEME_ENEMIES: Record<Theme, EnemyKind[]> = {
   tech: ['grunt', 'grunt', 'grunt', 'imp'],
   brick: ['grunt', 'imp', 'imp'],
   hell: ['imp', 'demon', 'demon'],
+  cave: ['imp', 'demon'],
+  base: ['grunt', 'imp'],
 }
 
 const ROOM_GAP = 2
@@ -388,5 +392,5 @@ function tryGenerate(seed: string, rng: Rng, opts: GenOptions): Level | null {
     }
   }
 
-  return { seed, width: W, height: H, cells, rooms, edges, things, lights, spawn, startRoom, keyRoom, exitRoom }
+  return { seed, width: W, height: H, cells, rooms, edges, things, lights, spawn, startRoom, keyRoom, exitRoom, kind: 'outpost' }
 }

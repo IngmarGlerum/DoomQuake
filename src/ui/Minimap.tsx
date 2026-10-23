@@ -33,7 +33,7 @@ export function Minimap({ level }: { level: Level }) {
       const y = Math.floor(i / level.width)
       const t = hi > lo ? (cell.floor - lo) / (hi - lo) : 0.5
       const v = Math.round(60 + t * 150)
-      ctx.fillStyle = cell.door ? '#c02020' : cell.liquid ? '#30a020' : `rgb(${v},${v},${Math.round(v * 0.9)})`
+      ctx.fillStyle = cell.door ? '#c02020' : cell.slide ? '#e0b818' : cell.liquid ? '#30a020' : cell.prop ? '#505868' : cell.theme === 'base' ? `rgb(${Math.round(v * 0.8)},${Math.round(v * 0.9)},${v})` : `rgb(${v},${v},${Math.round(v * 0.9)})`
       ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE)
     })
     for (const t of level.things) {

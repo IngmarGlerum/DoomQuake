@@ -268,6 +268,61 @@ body,
   }
 }
 
+/* ---------- levelkeuze ---------- */
+
+.level-picker {
+  display: flex;
+  gap: 14px;
+  margin: 6px 0 10px;
+}
+
+.level-card {
+  pointer-events: auto;
+  cursor: pointer;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  font-family: inherit;
+  text-align: left;
+  color: #c8b080;
+  background: rgba(20, 16, 12, 0.85);
+  border: 3px solid #4a4030;
+}
+
+.level-card:hover {
+  border-color: #8a7040;
+}
+
+.level-card.selected {
+  border-color: #ffd040;
+  background: rgba(60, 44, 10, 0.9);
+  box-shadow: 0 0 12px rgba(255, 176, 0, 0.5);
+}
+
+.level-num {
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: #a08850;
+}
+
+.level-name {
+  font-size: 32px;
+  line-height: 1;
+  color: #ffd080;
+}
+
+.level-card.selected .level-name {
+  color: #ffe060;
+}
+
+.level-desc {
+  font-size: 17px;
+  line-height: 1.1;
+}
+
 /* ---------- mobiel / touch ---------- */
 
 html,
@@ -504,7 +559,47 @@ body {
   }
 
   .overlay h1 {
-    font-size: 48px;
+    font-size: 34px;
+    margin: 0 0 2px;
+  }
+
+  .overlay table {
+    font-size: 14px;
+  }
+
+  .overlay td {
+    padding: 0 10px;
+  }
+
+  .overlay .hint {
+    font-size: 14px;
+  }
+
+  .level-picker {
+    gap: 8px;
+    margin: 2px 0 4px;
+  }
+
+  .level-card {
+    width: 220px;
+    padding: 3px 10px;
+  }
+
+  .level-num {
+    font-size: 12px;
+  }
+
+  .level-name {
+    font-size: 24px;
+  }
+
+  .level-desc {
+    font-size: 14px;
+  }
+
+  .overlay-btn {
+    font-size: 26px;
+    padding: 2px 22px;
   }
 
   .overlay table {

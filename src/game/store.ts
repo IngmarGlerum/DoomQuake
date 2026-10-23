@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { create } from 'zustand'
 import { AMMO_MAX, WEAPONS, type AmmoType } from './combat/weapons'
 import { DIFFICULTY } from './difficulty'
+import type { LevelKind } from './level/types'
 import { randomSeed } from './rng'
 
 export type Status = 'playing' | 'won' | 'dead'
@@ -11,6 +12,8 @@ export type DropKind = 'stimpack' | 'clip' | 'shells' | 'rocket' | 'disks'
 
 interface GameState {
   seed: string
+  /** welk level (buitenpost of grotbasis) */
+  levelKind: LevelKind
   /** verhoogd bij elke (her)start, zodat de scene opnieuw mount */
   run: number
   status: Status
@@ -31,6 +34,8 @@ interface GameState {
   noclip: boolean
 
   newLevel(seed?: string): void
+  /** wissel naar een ander level (met een nieuwe seed) */
+  chooseLevel(kind: LevelKind): void
   restart(): void
   say(message: string): void
   pickup(kind: PickupKind | DropKind): boolean
@@ -47,7 +52,16 @@ interface GameState {
   toggleNoclip(): void
 }
 
-const initialSeed = new URLSearchParams(window.location.search).get('seed') || randomSeed()
+const params = new URLSearchParams(window.location.search)
+const initialSeed = params.get('seed') || randomSeed()
+const initialKind: LevelKind = params.get('level') === 'caves' ? 'caves' : 'outpost'
+
+function writeUrl(seed: string, kind: LevelKind) {
+  const url = new URL(window.location.href)
+  url.searchParams.set('seed', seed)
+  url.searchParams.set('level', kind)
+  window.history.replaceState(null, '', url)
+}
 
 const fresh = () => ({
   status: 'playing' as Status,
@@ -65,6 +79,7 @@ const fresh = () => ({
 
 export const useGame = create<GameState>()((set, get) => ({
   seed: initialSeed,
+  levelKind: initialKind,
   run: 0,
   ...fresh(),
   locked: false,
@@ -73,10 +88,14 @@ export const useGame = create<GameState>()((set, get) => ({
   noclip: false,
 
   newLevel(seed = randomSeed()) {
-    const url = new URL(window.location.href)
-    url.searchParams.set('seed', seed)
-    window.history.replaceState(null, '', url)
+    writeUrl(seed, get().levelKind)
     set((s) => ({ ...fresh(), seed, run: s.run + 1 }))
+  },
+  chooseLevel(kind) {
+    if (kind === get().levelKind) return
+    const seed = randomSeed()
+    writeUrl(seed, kind)
+    set((s) => ({ ...fresh(), seed, levelKind: kind, run: s.run + 1 }))
   },
   restart() {
     set((s) => ({ ...fresh(), run: s.run + 1 }))

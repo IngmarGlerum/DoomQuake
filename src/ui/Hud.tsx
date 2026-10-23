@@ -5,6 +5,8 @@ import { getWeaponIcons } from '../game/render/weaponIcons'
 import { sfx } from '../game/audio'
 import { isTouchDevice } from '../game/player/input'
 import { useGame } from '../game/store'
+import { LEVEL_ORDER, LEVELS } from '../game/level/levels'
+import { pointerLock } from '../game/player/pointerLock'
 import { startTouchPlay } from './TouchControls'
 
 const MESSAGE_MS = 2500
@@ -59,6 +61,7 @@ export function Hud({ level }: { level: Level }) {
       {status === 'playing' && !locked && (
         <div className="overlay">
           <h1>RETRO SHOOTER</h1>
+          <LevelPicker />
           {isTouchDevice ? (
             <>
               <button className="overlay-btn" onClick={startTouchPlay}>
@@ -76,7 +79,9 @@ export function Hud({ level }: { level: Level }) {
             </>
           ) : (
             <>
-              <p className="blink">Klik om te spelen</p>
+              <button className="overlay-btn" onClick={() => pointerLock.lock()}>
+                ▶ SPELEN
+              </button>
               <table>
                 <tbody>
                   <tr><td>WASD / pijltjes</td><td>lopen</td></tr>
@@ -127,6 +132,26 @@ function Stat({ label, value, warn }: { label: string; value: string | number; w
     <div className={`stat ${warn ? 'warn' : ''}`}>
       <div className="value">{value}</div>
       <div className="label">{label}</div>
+    </div>
+  )
+}
+
+/** Keuze tussen de levels; een ander level kiezen start een nieuw spel. */
+function LevelPicker() {
+  const current = useGame((s) => s.levelKind)
+  return (
+    <div className="level-picker">
+      {LEVEL_ORDER.map((kind, i) => (
+        <button
+          key={kind}
+          className={`level-card ${kind === current ? 'selected' : ''}`}
+          onClick={() => useGame.getState().chooseLevel(kind)}
+        >
+          <span className="level-num">LEVEL {i + 1}</span>
+          <span className="level-name">{LEVELS[kind].name}</span>
+          <span className="level-desc">{LEVELS[kind].description}</span>
+        </button>
+      ))}
     </div>
   )
 }

@@ -31,7 +31,42 @@ export function buildLevelGeometry(level: Level, lighting: Lighting): Map<Textur
   }
   const color: RGB = [0, 0, 0]
 
+  // Rotsachtige grotwanden: elk muurhoekpunt in een grot schuift een vast, willekeurig stukje op.
+  // Omdat het per hoekpunt gebeurt, sluiten vloer, plafond en muren naadloos op elkaar aan.
+  const jitterAmount = level.cornerJitter ?? 0
+  const jitterCache = new Map<number, [number, number]>()
+  const cornerJitter = (gx: number, gz: number): [number, number] => {
+    const key = gz * (width + 1) + gx
+    const hit = jitterCache.get(key)
+    if (hit) return hit
+    let ok = true
+    for (let dz = -1; dz <= 0 && ok; dz++) {
+      for (let dx = -1; dx <= 0 && ok; dx++) {
+        const x = gx + dx
+        const z = gz + dz
+        if (x < 0 || z < 0 || x >= width || z >= height) continue
+        const c = cells[z * width + x]
+        // alleen in pure grot; basismuren, deuren en aansluitgangen blijven recht
+        if (!c.solid && (c.theme !== 'cave' || c.door || c.slide)) ok = false
+      }
+    }
+    const h = Math.sin(gx * 127.1 + gz * 311.7) * 43758.5453
+    const h2 = Math.sin(gx * 269.5 + gz * 183.3) * 43758.5453
+    const out: [number, number] = ok ? [((h - Math.floor(h)) * 2 - 1) * jitterAmount, ((h2 - Math.floor(h2)) * 2 - 1) * jitterAmount] : [0, 0]
+    jitterCache.set(key, out)
+    return out
+  }
+  const jitter = (p: V3): V3 => {
+    if (!jitterAmount) return p
+    const gx = Math.round(p[0] / CELL)
+    const gz = Math.round(p[2] / CELL)
+    if (Math.abs(gx * CELL - p[0]) > 1e-4 || Math.abs(gz * CELL - p[2]) > 1e-4) return p
+    const [jx, jz] = cornerJitter(gx, gz)
+    return [p[0] + jx, p[1], p[2] + jz]
+  }
+
   const quad = (name: TextureName, corners: V3[], uvs: [number, number][], normal: V3) => {
+    corners = corners.map(jitter)
     // zorg dat de driehoeken met de voorkant naar de normaal wijzen
     if (dot(cross(sub(corners[1], corners[0]), sub(corners[2], corners[0])), normal) < 0) {
       corners = [...corners].reverse()

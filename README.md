@@ -30,6 +30,18 @@ lastiger). Forceren kan met `?difficulty=mobiel` of `?difficulty=normaal`.
 
 **Doel:** vind de rode sleutel, open de rode deur en bereik de EXIT.
 
+## Levels
+
+Kies in het beginscherm tussen:
+
+- **Level 1: Buitenpost**: tech-basis, bakstenen hallen en de hel, vol vijanden (`src/game/level/generate.ts`)
+- **Level 2: Grotbasis**: een kronkelig grottenstelsel met een kwaadaardige basis (`src/game/level/generateCaves.ts`).
+  Slingerende tunnels, rotswanden met grillige hoeken, basiskamers met een functie (serverruimte, controlekamer,
+  lab met opengewrongen kooien, opslag, reactor), automatische schuifdeuren met een zwart-geel kozijn, pijpen,
+  kabels en lampen. Nog zonder vijanden.
+
+Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`).
+
 ## Wat er nu is
 
 - **Procedurele levelgenerator** (`src/game/level/generate.ts`)

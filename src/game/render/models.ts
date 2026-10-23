@@ -9,7 +9,7 @@ import type { EnemyKind } from '../level/types'
  */
 const LIGHT_DIR = new THREE.Vector3(0.4, 0.85, 0.35).normalize()
 
-function shaded(geometry: THREE.BufferGeometry, color: number): THREE.BufferGeometry {
+export function shaded(geometry: THREE.BufferGeometry, color: number): THREE.BufferGeometry {
   const g = geometry.index ? geometry.toNonIndexed() : geometry
   g.computeVertexNormals()
   const n = g.getAttribute('normal')
