@@ -8,7 +8,8 @@ import { raycast, runtime } from '../combat/runtime'
 import { canWalk } from '../level/validate'
 import { CELL, type Level } from '../level/types'
 import type { Lighting, RGB } from '../render/lighting'
-import { enemyGeometry } from '../render/models'
+import { animateCreature, createCreature, tintCreature, type CreatureAnim } from '../render/creatures'
+import { enemyGeometry, type ClassicEnemy } from '../render/models'
 import { player, useGame } from '../store'
 import { computeFlowField, nextStep } from './flowField'
 import { damageEnemy, wake } from './damage'
@@ -61,7 +62,7 @@ export function Enemies({ level, lighting }: { level: Level; lighting: Lighting 
   // colliders aanmaken zodat kogels én de speler ze raken
   useEffect(() => {
     useGame.getState().setEnemyCount(enemies.length)
-    if (import.meta.env.DEV) Object.assign(window, { __enemies: enemies })
+    if (import.meta.env.DEV) Object.assign(window, { __enemies: enemies, __runtime: runtime })
     for (const e of enemies) {
       const half = e.def.height / 2 - e.def.radius
       e.collider = world.createCollider(
@@ -234,9 +235,13 @@ export function Enemies({ level, lighting }: { level: Level; lighting: Lighting 
 
   return (
     <>
-      {enemies.map((e) => (
-        <EnemyMesh key={e.id} enemy={e} lighting={lighting} />
-      ))}
+      {enemies.map((e) =>
+        e.kind === 'mutant' || e.kind === 'clawbeast' ? (
+          <CreatureMesh key={e.id} enemy={e} lighting={lighting} />
+        ) : (
+          <EnemyMesh key={e.id} enemy={e} lighting={lighting} />
+        ),
+      )}
     </>
   )
 }
@@ -266,7 +271,7 @@ function tryMove(level: Level, e: EnemyState, cell: number, mx: number, mz: numb
     const i = cz * level.width + cx
     if (i === cell) continue
     const to = level.cells[i]
-    if (!canWalk(from, to) || (to.door && !runtime.doorsOpen)) return false
+    if (!canWalk(from, to) || to.prop || (to.door && !runtime.doorsOpen)) return false
   }
   e.pos.x = nx
   e.pos.z = nz
@@ -281,14 +286,28 @@ function turnTowards(e: EnemyState, target: number, k: number) {
 function attack(e: EnemyState, dist: number) {
   const fwdX = -Math.sin(e.yaw)
   const fwdZ = -Math.cos(e.yaw)
-  const muzzle = eye(e, new THREE.Vector3()).add(new THREE.Vector3(fwdX * 0.55, -0.35, fwdZ * 0.55))
   const target = playerChest(new THREE.Vector3())
+  let muzzle = eye(e, new THREE.Vector3()).add(new THREE.Vector3(fwdX * 0.55, -0.35, fwdZ * 0.55))
+  if (e.muzzleWorld) {
+    // vanuit de kanonmonding, tenzij die net achter een hoek of pijp zit: dan vanaf de schouder
+    const d = tmpC.subVectors(target, e.muzzleWorld)
+    const len = d.length()
+    const hit = raycast(e.muzzleWorld, d.normalize(), len, { ignoreEnemies: true })
+    if (!hit || hit.distance >= len - 0.5) muzzle = e.muzzleWorld.clone()
+  }
   const [min, max] = e.def.damage
 
   if (e.def.attack === 'melee') {
+    const claw = e.kind === 'clawbeast'
+    if (claw) sfx.swipe(e.pos)
     if (dist < e.def.range + 0.4) {
       useGame.getState().damage(Math.round(rand(min, max)))
-      sfx.bite(e.pos)
+      if (claw) {
+        sfx.rend(e.pos)
+        // de klap duwt de speler weg
+        player.impulse.x += fwdX * 6
+        player.impulse.z += fwdZ * 6
+      } else sfx.bite(e.pos)
       sfx.hurt()
     }
     return
@@ -296,8 +315,13 @@ function attack(e: EnemyState, dist: number) {
 
   if (e.def.attack === 'fireball') {
     spawnFireball(muzzle, target, Math.round(rand(min, max)))
-    sfx.fireball(e.pos)
-    fx.flash(muzzle, 1.2, [2, 1, 0.3], 0.1)
+    if (e.kind === 'mutant') {
+      sfx.cannon(e.pos)
+      fx.flash(muzzle, 2, [2.4, 1.1, 0.3], 0.14)
+    } else {
+      sfx.fireball(e.pos)
+      fx.flash(muzzle, 1.2, [2, 1, 0.3], 0.1)
+    }
     return
   }
 
@@ -369,8 +393,56 @@ function EnemyMesh({ enemy: e, lighting }: { enemy: EnemyState; lighting: Lighti
   })
 
   return (
-    <mesh ref={ref} geometry={enemyGeometry(e.kind)}>
+    <mesh ref={ref} geometry={enemyGeometry(e.kind as ClassicEnemy)}>
       <meshBasicMaterial vertexColors />
     </mesh>
   )
+}
+
+/** Geanimeerd, gelede model (mutant en klauwbeest uit het grot-level). */
+function CreatureMesh({ enemy: e, lighting }: { enemy: EnemyState; lighting: Lighting }) {
+  const rig = useMemo(() => createCreature(e.kind as 'mutant' | 'clawbeast', e.id), [e])
+  const anim = useRef<CreatureAnim>({ phase: Math.random() * 10, walk: 0, last: e.pos.clone(), stepSide: 0 })
+  const light = useRef<RGB>([0, 0, 0])
+  const lightTimer = useRef(0)
+
+  useEffect(() => {
+    if (rig.muzzle) e.muzzleWorld = new THREE.Vector3()
+    if (import.meta.env.DEV) Object.assign(e, { rig })
+    return () => {
+      rig.root.traverse((o) => {
+        if (o instanceof THREE.Mesh) (o.material as THREE.Material).dispose()
+      })
+    }
+  }, [rig, e])
+
+  useFrame(({ clock }, delta) => {
+    const dt = Math.min(delta, 0.05)
+    const a = anim.current
+    rig.root.position.copy(e.pos)
+    rig.root.rotation.y = e.yaw
+    const speed = dt > 0 ? Math.hypot(e.pos.x - a.last.x, e.pos.z - a.last.z) / dt : 0
+    a.last.copy(e.pos)
+    const step = animateCreature(
+      rig,
+      a,
+      { state: e.state, stateTime: e.stateTime, windup: e.def.windup, fired: e.fired, speed: Math.min(speed, e.def.speed * 1.5), maxSpeed: e.def.speed, hitFlash: e.hitFlash },
+      clock.elapsedTime,
+      dt,
+    )
+    if (step && e.kind === 'clawbeast') sfx.stomp(e.pos)
+
+    lightTimer.current -= dt
+    if (lightTimer.current <= 0) {
+      lightTimer.current = 0.2
+      lighting.sample(e.pos.x, e.pos.y + 1.5, e.pos.z, undefined, light.current)
+      tintCreature(rig, light.current)
+    }
+    if (rig.muzzle && e.muzzleWorld) {
+      rig.root.updateMatrixWorld(true)
+      rig.muzzle.getWorldPosition(e.muzzleWorld)
+    }
+  })
+
+  return <primitive object={rig.root} />
 }

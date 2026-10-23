@@ -22,6 +22,8 @@ describe('generateLevel', () => {
       expect(level.things.filter((t) => t.kind === 'key')).toHaveLength(1)
       expect(level.things.filter((t) => t.kind === 'exit')).toHaveLength(1)
       expect(level.things.some((t) => t.kind === 'enemy')).toBe(true)
+      // de grotwezens komen hier nooit voor
+      for (const t of level.things) if (t.kind === 'enemy') expect(['grunt', 'imp', 'demon']).toContain(t.enemy)
       const floors = new Set(level.cells.filter((c) => !c.solid).map((c) => c.floor))
       expect(floors.size).toBeGreaterThan(1)
       expect(new Set([level.startRoom, level.keyRoom, level.exitRoom]).size).toBe(3)

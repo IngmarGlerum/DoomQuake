@@ -32,8 +32,8 @@ const THEME_ENEMIES: Record<Theme, EnemyKind[]> = {
   tech: ['grunt', 'grunt', 'grunt', 'imp'],
   brick: ['grunt', 'imp', 'imp'],
   hell: ['imp', 'demon', 'demon'],
-  cave: ['imp', 'demon'],
-  base: ['grunt', 'imp'],
+  cave: ['clawbeast', 'mutant'],
+  base: ['mutant'],
 }
 
 const ROOM_GAP = 2

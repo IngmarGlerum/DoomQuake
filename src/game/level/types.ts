@@ -67,7 +67,7 @@ export type Prop =
 
 export type LevelKind = 'outpost' | 'caves'
 
-export type EnemyKind = 'grunt' | 'imp' | 'demon'
+export type EnemyKind = 'grunt' | 'imp' | 'demon' | 'mutant' | 'clawbeast'
 export type ThingKind = 'enemy' | 'health' | 'ammo' | 'armor' | 'key' | 'exit'
 
 export interface Thing {

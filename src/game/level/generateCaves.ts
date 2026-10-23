@@ -5,6 +5,7 @@ import {
   STEP,
   cellCenter,
   type Cell,
+  type EnemyKind,
   type Level,
   type Light,
   type Prop,
@@ -443,6 +444,38 @@ function tryGenerate(seed: string, rng: Rng): Level | null {
     for (let i = 0; i < count && free.length; i++) {
       const [x, y] = free.pop()!
       place(rng.pick(['health', 'ammo', 'ammo', 'armor'] as const), x, y)
+    }
+  }
+
+  // 10. Vijanden: alleen de wezens van dit level (mutanten in de basis, klauwbeesten in de grotten)
+  for (const n of nodes) {
+    const r = n.room
+    if (r.id === startRoom) continue
+    const free: [number, number][] = []
+    for (let y = r.y; y < r.y + r.h; y++) {
+      for (let x = r.x; x < r.x + r.w; x++) {
+        const c = at(x, y)
+        if (c.solid || c.room !== r.id || c.liquid || c.slide || c.door || c.prop || used.has(idx(x, y))) continue
+        // genoeg ruimte rondom voor de grote modellen
+        const roomy = [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => {
+          const o = at(x + dx, y + dy)
+          return !o.solid && !o.prop
+        })
+        if (roomy) free.push([x, y])
+      }
+    }
+    rng.shuffle(free)
+    const spawnEnemy = (enemy: EnemyKind) => {
+      const spot = free.pop()
+      if (!spot) return
+      place('enemy', ...spot)
+      things[things.length - 1].enemy = enemy
+    }
+    if (r.kind === 'base') {
+      const count = r.id === exitRoom ? 2 : rng.int(1, 2)
+      for (let i = 0; i < count; i++) spawnEnemy('mutant')
+    } else {
+      spawnEnemy(n.radius >= 3 ? 'clawbeast' : 'mutant')
     }
   }
 

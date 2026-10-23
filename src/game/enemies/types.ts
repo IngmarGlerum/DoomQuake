@@ -21,6 +21,8 @@ export interface EnemyDef {
   painChance: number
   /** afstand waarop ranged vijanden blijven staan in plaats van verder te lopen */
   holdDistance: number
+  /** waar het schot vandaan komt, lokaal: [rechts, hoogte, vooruit] (anders: vanaf de ogen) */
+  muzzle?: [number, number, number]
 }
 
 export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
@@ -63,6 +65,35 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     painChance: 0.3,
     holdDistance: 0,
   },
+  // grot-level: gespierde mutant met een kanon als linkerarm
+  mutant: {
+    hp: 150,
+    speed: 2.6,
+    radius: 0.55,
+    height: 2.45,
+    attack: 'fireball',
+    range: 34,
+    cooldown: [1.5, 2.4],
+    windup: 0.6,
+    damage: [14, 22],
+    painChance: 0.3,
+    holdDistance: 8,
+    muzzle: [-0.62, 1.55, 1.05],
+  },
+  // grot-level: groot klauwbeest dat steeds dichterbij komt en hard uithaalt
+  clawbeast: {
+    hp: 280,
+    speed: 4.2,
+    radius: 0.75,
+    height: 2.9,
+    attack: 'melee',
+    range: 2.7,
+    cooldown: [1.2, 1.6],
+    windup: 0.55,
+    damage: [30, 45],
+    painChance: 0.12,
+    holdDistance: 0,
+  },
 }
 
 export interface EnemyState {
@@ -86,4 +117,6 @@ export interface EnemyState {
   /** zijwaarts bewegen tijdens het wachten op een nieuwe aanval */
   strafe: number
   collider: Collider | null
+  /** wereldpositie van de kanonmonding (bijgewerkt door het geanimeerde model) */
+  muzzleWorld?: THREE.Vector3
 }

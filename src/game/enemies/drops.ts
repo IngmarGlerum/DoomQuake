@@ -21,6 +21,16 @@ const DROP_TABLE: Record<EnemyKind, [DropKind, number][]> = {
     ['shells', 0.2],
     ['disks', 0.1],
   ],
+  mutant: [
+    ['shells', 0.3],
+    ['stimpack', 0.25],
+    ['rocket', 0.15],
+  ],
+  clawbeast: [
+    ['stimpack', 0.5],
+    ['disks', 0.25],
+    ['rocket', 0.15],
+  ],
 }
 
 export interface Drop {

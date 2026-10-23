@@ -38,7 +38,7 @@ Kies in het beginscherm tussen:
 - **Level 2: Grotbasis**: een kronkelig grottenstelsel met een kwaadaardige basis (`src/game/level/generateCaves.ts`).
   Slingerende tunnels, rotswanden met grillige hoeken, basiskamers met een functie (serverruimte, controlekamer,
   lab met opengewrongen kooien, opslag, reactor), automatische schuifdeuren met een zwart-geel kozijn, pijpen,
-  kabels en lampen. Nog zonder vijanden.
+  kabels en lampen. Hier wonen alleen de mutant en het klauwbeest (de vijanden uit level 1 komen er niet voor).
 
 Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`).
 
@@ -67,8 +67,16 @@ Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`).
   - grunt: hitscan-geweer (minder raak op afstand en als je rent)
   - imp: vuurballen die je kunt ontwijken
   - demon: snel, valt aan met een beet
+  - mutant (alleen grot-level): gespierde stierkop met een kanon als linkerarm; heft het kanon, richt en vuurt
+    vuurballen af met terugslag
+  - klauwbeest (alleen grot-level): groot, gebocheld beest met lange klauwen, digitigrade poten met nagels en een
+    verkoolde, gloeiende Balrog-kop met ramshoorns en vlammen; komt steeds dichterbij en haalt uit met zijn
+    klauw (hoge schade, duwt je weg)
+  - beide zijn gelede 3D-modellen (`src/game/render/creatures.ts`): een skelet van gewrichten met procedurele
+    animatie (looppas op werkelijke snelheid, ademhaling, rondkijken, aanval, pijn, omvallen bij de dood) en
+    zelf gegenereerde huid-, metaal- en hoorntextures met normal maps
 - **Drops**: verslagen vijanden laten soms iets vallen (grunt: kogels/stimpack, imp: shells/stimpack,
-  demon: stimpack/raket/shells); bij weinig health valt er vaker een stimpack
+  demon: stimpack/raket/shells, mutant: shells/stimpack/raket, klauwbeest: stimpack/disks/raket); bij weinig health valt er vaker een stimpack
 - **Disk launcher** (`src/game/combat/Disks.tsx`): liggende cirkelzaag die 5× stuitert (hoek van inval = hoek van
   uitval) en door vijanden heen snijdt; elke geraakte vijand krijgt schade. Klang + vonken tegen muren, scheurend
   geluid + bloed bij vijanden; in het viewmodel vliegt de schijf weg en schuift er een nieuwe van onderen in

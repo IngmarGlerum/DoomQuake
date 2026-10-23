@@ -256,6 +256,27 @@ export const sfx = {
     noise(o, 0.15, 1200, 200, 0.7)
     tone(o, 'square', 100, 70, 0.1, 0.3)
   }),
+  /** zware dreun van het armkanon van de mutant */
+  cannon: sound(1, (o) => {
+    noise(o, 0.45, 1800, 120, 0.7)
+    tone(o, 'sine', 120, 38, 0.4, 0.55)
+    noise(o, 0.6, 500, 2200, 0.3, 'bandpass', 0.05)
+  }),
+  /** diep gebrul van het klauwbeest */
+  roar: sound(1, (o) => {
+    tone(o, 'sawtooth', 70, 42, 1.1, 0.35)
+    tone(o, 'sawtooth', 105, 60, 1.0, 0.18, 0.04)
+    noise(o, 1.1, 900, 180, 0.35, 'bandpass')
+  }),
+  /** klauw die door de lucht zwiept */
+  swipe: sound(0.9, (o) => {
+    noise(o, 0.22, 600, 4500, 0.5, 'bandpass')
+  }),
+  /** zware voetstap */
+  stomp: sound(0.55, (o) => {
+    tone(o, 'sine', 70, 35, 0.2, 0.6)
+    noise(o, 0.12, 400, 80, 0.35)
+  }),
   pain: sound(0.7, (o) => tone(o, 'sawtooth', 320, 140, 0.18, 0.25)),
   death: sound(0.9, (o) => {
     tone(o, 'sawtooth', 300, 40, 0.7, 0.3)

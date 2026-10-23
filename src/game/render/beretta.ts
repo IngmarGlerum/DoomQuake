@@ -127,7 +127,7 @@ function sideCanvas(u0: number, u1: number, v0: number, v1: number, ppm: number)
 }
 
 /** Hoogtekaart (grijswaarden) → tangent-space normal map. */
-function heightToNormal(src: HTMLCanvasElement, strength: number): HTMLCanvasElement {
+export function heightToNormal(src: HTMLCanvasElement, strength: number): HTMLCanvasElement {
   const { width: w, height: h } = src
   const data = src.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, w, h).data
   const out = document.createElement('canvas')

@@ -71,6 +71,9 @@ export default function App() {
       >
         <color attach="background" args={['#000000']} />
         <fog attach="fog" args={['#000000', 18, 75]} />
+        {/* alleen voor de geanimeerde wezens (standard materials); de wereld is vooraf belicht */}
+        <hemisphereLight args={['#c8c0b8', '#201810', 1.1]} />
+        <directionalLight position={[0.4, 1, 0.3]} intensity={1.5} />
         <Suspense fallback={null}>
           <Physics gravity={[0, 0, 0]}>
             <LevelMesh level={level} lighting={lighting} />

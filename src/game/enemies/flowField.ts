@@ -34,7 +34,7 @@ export function computeFlowField(level: Level, target: number, doorsOpen: boolea
       const j = ny * width + nx
       if (dist[j] !== -1) continue
       if (!doorsOpen && cells[j].door) continue
-      if (!canWalk(cells[i], cells[j])) continue
+      if (cells[j].prop || !canWalk(cells[i], cells[j])) continue
       dist[j] = dist[i] + 1
       queue[tail++] = j
     }

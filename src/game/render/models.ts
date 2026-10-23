@@ -60,7 +60,9 @@ function merge(parts: Part[]): THREE.BufferGeometry {
   return out
 }
 
-const ENEMY_PARTS: Record<EnemyKind, () => Part[]> = {
+/** Eenvoudige low-poly vijanden (level 1). De grotwezens zijn gelede modellen, zie creatures.ts. */
+export type ClassicEnemy = Exclude<EnemyKind, 'mutant' | 'clawbeast'>
+const ENEMY_PARTS: Record<ClassicEnemy, () => Part[]> = {
   // soldaat met helm en geweer
   grunt: () => [
     { geo: box(0.24, 0.85, 0.26), color: 0x3d4a2a, pos: [-0.15, 0.43, 0] },
@@ -108,7 +110,7 @@ const cached = (key: string, build: () => THREE.BufferGeometry) => {
   return cache.get(key)!
 }
 
-export const enemyGeometry = (kind: EnemyKind) => cached(`enemy-${kind}`, () => merge(ENEMY_PARTS[kind]()))
+export const enemyGeometry = (kind: ClassicEnemy) => cached(`enemy-${kind}`, () => merge(ENEMY_PARTS[kind]()))
 
 export const pickupGeometry = {
   health: () =>

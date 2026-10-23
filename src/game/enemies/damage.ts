@@ -51,6 +51,7 @@ export function wake(e: EnemyState) {
   e.stateTime = 0
   e.cooldown = rand(0.3, 1.0)
   if (e.kind === 'grunt') sfx.alert(e.pos)
+  else if (e.kind === 'clawbeast') sfx.roar(e.pos)
   else sfx.growl(e.pos)
 }
 

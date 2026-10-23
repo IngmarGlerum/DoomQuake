@@ -15,8 +15,12 @@ describe('generateCaveLevel', () => {
       expect(level.kind).toBe('caves')
       expect(level.things.filter((t) => t.kind === 'key')).toHaveLength(1)
       expect(level.things.filter((t) => t.kind === 'exit')).toHaveLength(1)
-      // nog geen vijanden in dit level
-      expect(level.things.some((t) => t.kind === 'enemy')).toBe(false)
+      // alleen de grotwezens, nooit de vijanden uit het eerste level
+      const enemies = level.things.filter((t) => t.kind === 'enemy')
+      expect(enemies.length).toBeGreaterThan(3)
+      for (const e of enemies) expect(['mutant', 'clawbeast']).toContain(e.enemy)
+      for (const e of enemies) expect(level.cells[e.cell].room).not.toBe(level.startRoom)
+      for (const e of enemies) counts[e.enemy!] = (counts[e.enemy!] ?? 0) + 1
       // schuifdeuren en een deur op slot voor de exit
       expect(level.cells.some((c) => c.slide)).toBe(true)
       expect(level.cells.some((c) => c.door)).toBe(true)
@@ -27,7 +31,7 @@ describe('generateCaveLevel', () => {
       // het decor staat nooit op de start, sleutel of exit
       for (const t of level.things) expect(level.cells[t.cell].prop).toBeFalsy()
     }
-    for (const kind of ['rack', 'terminal', 'switchboard', 'cage', 'crate', 'lamp', 'pipe', 'cable']) {
+    for (const kind of ['mutant', 'clawbeast', 'rack', 'terminal', 'switchboard', 'cage', 'crate', 'lamp', 'pipe', 'cable']) {
       expect(counts[kind] ?? 0, kind).toBeGreaterThan(0)
     }
   })

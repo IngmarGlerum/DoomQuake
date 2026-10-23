@@ -71,7 +71,10 @@ export function Projectiles() {
   const rockets = useRef<THREE.Group>(null)
   const dir = useRef(new THREE.Vector3())
 
-  useEffect(() => pool.forEach((p) => (p.active = false)), [])
+  useEffect(() => {
+    pool.forEach((p) => (p.active = false))
+    if (import.meta.env.DEV) Object.assign(window, { __projectiles: pool })
+  }, [])
 
   useFrame(({ clock }, delta) => {
     const { locked, status } = useGame.getState()
