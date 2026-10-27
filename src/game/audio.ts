@@ -1,3 +1,5 @@
+import machinegunM4a from '../assets/sounds/machinegun.m4a?url'
+import machinegunOgg from '../assets/sounds/machinegun.ogg?url'
 import pistolM4a from '../assets/sounds/pistol.m4a?url'
 import pistolOgg from '../assets/sounds/pistol.ogg?url'
 import { player } from './store'
@@ -34,7 +36,7 @@ export interface Pos {
 }
 
 /** Uitgang voor één geluid: volume op afstand + stereo-pan op hoek t.o.v. kijkrichting. */
-function output(pos?: Pos, volume = 1): AudioNode | null {
+function output(pos?: Pos, volume = 1, roomLevel = 0): AudioNode | null {
   const ac = audio()
   const g = ac.createGain()
   let gain = volume
@@ -53,8 +55,73 @@ function output(pos?: Pos, volume = 1): AudioNode | null {
     g.connect(master!)
   }
   g.gain.value = gain
+  if (roomLevel > 0) {
+    // een deel van het geluid door de galm van de ruimte
+    const send = ac.createGain()
+    send.gain.value = roomLevel
+    g.connect(send).connect(room())
+  }
   return g
 }
+
+// ---------- ruimteklank ----------
+
+let roomIn: AudioNode | null = null
+
+/** Galmbus: een convolver met een zelf gegenereerde impulsrespons van een (betonnen) kamer. */
+function room(): AudioNode {
+  if (roomIn) return roomIn
+  const ac = audio()
+  const conv = ac.createConvolver()
+  conv.buffer = roomImpulse(ac, 1.1, 0.75)
+  const filter = ac.createBiquadFilter()
+  // de galm zelf iets donkerder en zonder subbas, zodat hij niet gaat dreunen
+  filter.type = 'highpass'
+  filter.frequency.value = 160
+  conv.connect(filter).connect(master!)
+  roomIn = conv
+  return conv
+}
+
+/**
+ * Impulsrespons: eerst een paar losse vroege reflecties (muren dichtbij), daarna een
+ * diffuse, uitstervende staart die steeds donkerder wordt (hoge tonen dempen sneller uit).
+ * Links en rechts verschillen, voor een ruimtelijk stereobeeld.
+ */
+export function roomImpulse(ac: BaseAudioContext, seconds: number, rt60: number) {
+  const sr = ac.sampleRate
+  const len = Math.floor(sr * seconds)
+  const buf = ac.createBuffer(2, len, sr)
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch)
+    let seed = ch ? 0x9e3779b9 : 0x2545f491
+    const rnd = () => {
+      seed ^= seed << 13
+      seed ^= seed >>> 17
+      seed ^= seed << 5
+      return ((seed >>> 0) / 4294967296) * 2 - 1
+    }
+    // vroege reflecties tussen 4 en 38 ms
+    const taps = ch ? [5.1, 9.7, 13.2, 19.8, 24.4, 31.0, 37.5] : [4.3, 8.2, 14.9, 17.6, 23.1, 28.7, 35.2]
+    taps.forEach((ms, i) => {
+      const at = Math.floor((ms / 1000) * sr)
+      d[at] += (i % 2 ? -1 : 1) * (0.55 - i * 0.06)
+    })
+    // diffuse staart, met een lowpass die steeds verder dichtgaat
+    let lp = 0
+    const start = Math.floor(0.008 * sr)
+    for (let i = start; i < len; i++) {
+      const t = i / sr
+      const env = Math.exp((-6.9 * t) / rt60) * Math.min(1, (i - start) / (0.012 * sr))
+      const k = 0.55 * Math.exp(-t * 5) + 0.06
+      lp += k * (rnd() - lp)
+      d[i] += lp * env * 0.9
+    }
+  }
+  return buf
+}
+
+
 
 const noiseCache = new Map<number, AudioBuffer>()
 function noiseBuffer(ac: AudioContext, seconds: number) {
@@ -123,7 +190,10 @@ async function loadSample(name: string, urls: { ogg: string; m4a: string }) {
   }
 }
 
-if (typeof window !== 'undefined') void loadSample('pistol', { ogg: pistolOgg, m4a: pistolM4a })
+if (typeof window !== 'undefined') {
+  void loadSample('pistol', { ogg: pistolOgg, m4a: pistolM4a })
+  void loadSample('machinegun', { ogg: machinegunOgg, m4a: machinegunM4a })
+}
 
 /** Speel een sample af; false als hij (nog) niet geladen is. */
 function playSample(name: string, pos: Pos | undefined, volume: number, pitchJitter = 0) {
@@ -136,6 +206,29 @@ function playSample(name: string, pos: Pos | undefined, volume: number, pitchJit
   src.playbackRate.value = 1 + (Math.random() * 2 - 1) * pitchJitter
   src.connect(out)
   src.start()
+  return true
+}
+
+/**
+ * Round robin: het bestand bevat meerdere losse opnames achter elkaar, elk in een vak van
+ * `slot` seconden. Speel er willekeurig één af, nooit twee keer dezelfde na elkaar, met
+ * kleine variaties in toonhoogte en volume, zodat een salvo niet als een machinegeweer-loop klinkt.
+ */
+const lastSlice = new Map<string, number>()
+function playSlice(name: string, slot: number, pos: Pos | undefined, volume: number, pitchJitter: number, roomLevel: number) {
+  const buffer = samples.get(name)
+  if (!buffer) return false
+  const count = Math.floor(buffer.duration / slot + 0.01)
+  let i = Math.floor(Math.random() * count)
+  if (count > 1 && i === lastSlice.get(name)) i = (i + 1 + Math.floor(Math.random() * (count - 1))) % count
+  lastSlice.set(name, i)
+  const out = output(pos, volume * (0.92 + Math.random() * 0.16), roomLevel)
+  if (!out) return true
+  const src = audio().createBufferSource()
+  src.buffer = buffer
+  src.playbackRate.value = 1 + (Math.random() * 2 - 1) * pitchJitter
+  src.connect(out)
+  src.start(0, i * slot, slot)
   return true
 }
 
@@ -152,6 +245,13 @@ const pistolSynth = sound(0.9, (o) => {
   tone(o, 'square', 180, 50, 0.12, 0.35)
 })
 
+const machinegunSynth = sound(0.7, (o) => {
+  noise(o, 0.11, 5000, 400, 0.6)
+  tone(o, 'square', 220, 70, 0.06, 0.25)
+})
+/** lengte van één vak in machinegun.ogg/m4a (zie playSlice) */
+const MACHINEGUN_SLOT = 0.12
+
 export const sfx = {
   // wapens van de speler
   /** opgenomen pistoolschot; valt terug op een synthgeluid tot de sample geladen is */
@@ -163,10 +263,11 @@ export const sfx = {
     noise(o, 0.45, 3000, 120, 0.6)
     tone(o, 'square', 120, 40, 0.2, 0.3)
   }),
-  machinegun: sound(0.7, (o) => {
-    noise(o, 0.11, 5000, 400, 0.6)
-    tone(o, 'square', 220, 70, 0.06, 0.25)
-  }),
+  /** opgenomen schoten (16 stuks, round robin) met de galm van de ruimte; synth tot de sample geladen is */
+  machinegun: (pos?: Pos) => {
+    if (playSlice('machinegun', MACHINEGUN_SLOT, pos, 0.8, 0.035, 0.6)) return
+    machinegunSynth(pos)
+  },
   rocket: sound(1, (o) => {
     noise(o, 0.6, 300, 1800, 0.5, 'bandpass')
     noise(o, 0.25, 1500, 150, 0.6)
