@@ -47,17 +47,19 @@ interface Pose {
   scale: number
   /** kanteling om de eigen loop-as (0 = rechtop); verandert de richting van de loop niet */
   roll: number
-  /** afstand waarop de loop het kruisje snijdt */
+  /**
+   * afstand waarop de loop-as de kijkrichting snijdt. Elk punt op de kijkas valt op het kruisje,
+   * dus de loop wijst altijd naar het kruisje; korter = schuiner naar binnen (meer zijkant in beeld).
+   * Moet verder liggen dan de loopmond.
+   */
   convergence: number
-  /** extra draai naar binnen (radialen), zodat je meer van de linkerkant ziet */
-  yaw?: number
 }
 
 /** Houding van de Beretta t.o.v. het wapenpunt. */
 const BERETTA_POSE: Pose = { position: new THREE.Vector3(-0.035, 0.115, 0.09), scale: 1.35, roll: 0, convergence: 12 }
 
 /** Houding van het aanvalsgeweer: laag rechts, kolf naar de schouder, vizieren in beeld. */
-const RIFLE_POSE: Pose = { position: new THREE.Vector3(-0.02, 0.135, 0.1), scale: 1, roll: 0, convergence: 14, yaw: 0.24 }
+const RIFLE_POSE: Pose = { position: new THREE.Vector3(-0.01, 0.135, 0.1), scale: 1, roll: 0, convergence: 1.5 }
 
 /**
  * Draai het wapen zo dat de loop vanuit de rustpositie precies naar het kruisje
@@ -65,14 +67,17 @@ const RIFLE_POSE: Pose = { position: new THREE.Vector3(-0.02, 0.135, 0.1), scale
  */
 function aimQuaternion(pose: Pose, muzzleOffset: THREE.Vector3): THREE.Quaternion {
   const gun = new THREE.Vector3(0.22, -0.24, -0.35).add(pose.position)
-  // de loop-as ligt iets onder de oorsprong van het model
-  const axis = gun.clone().add(new THREE.Vector3(0, muzzleOffset.y, 0))
-  const target = new THREE.Vector3(0, 0, -pose.convergence)
-  const dir = target.sub(axis).normalize()
-  const aim = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), dir)
-  const turn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), pose.yaw ?? 0)
+  // de loop-as ligt onder de oorsprong van het model; die afstand draait mee met het wapen,
+  // dus een paar keer bijstellen tot de as zelf (niet de oorsprong) door het doel gaat
+  const offset = new THREE.Vector3(0, muzzleOffset.y, 0)
   const roll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), pose.roll)
-  return turn.multiply(aim).multiply(roll)
+  const q = new THREE.Quaternion()
+  for (let i = 0; i < 4; i++) {
+    const axis = gun.clone().add(offset.clone().applyQuaternion(q))
+    const dir = new THREE.Vector3(0, 0, -pose.convergence).sub(axis).normalize()
+    q.setFromUnitVectors(new THREE.Vector3(0, 0, -1), dir).multiply(roll)
+  }
+  return q
 }
 
 /** Lege hulzen die uit de uitwerppoort vliegen (camera-coördinaten). */
