@@ -56,7 +56,7 @@ export const WEAPONS: WeaponDef[] = [
   },
   {
     id: 'machinegun',
-    name: 'Machine Gun',
+    name: 'Assault Rifle',
     slot: 3,
     ammo: 'bullets',
     pellets: 1,

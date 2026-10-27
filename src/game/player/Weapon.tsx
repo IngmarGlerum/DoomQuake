@@ -96,7 +96,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     camera.getWorldDirection(t.forward)
     t.right.setFromMatrixColumn(camera.matrixWorld, 0)
     t.up.setFromMatrixColumn(camera.matrixWorld, 1)
-    const local = def.id === 'pistol' ? vm.pistolMuzzle : t.muzzle.set(...def.muzzle)
+    const local = def.id === 'pistol' ? vm.pistolMuzzle : def.id === 'machinegun' ? vm.rifleMuzzle : t.muzzle.set(...def.muzzle)
     const muzzle = camera.localToWorld(t.muzzle.copy(local))
     runtime.lastShot = { x: camera.position.x, z: camera.position.z, time: performance.now() }
 
@@ -120,6 +120,10 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     s.kick = def.kick
     s.flash = 0.05
     if (def.id === 'pistol') s.slideT = 0
+    if (def.id === 'machinegun') {
+      vm.rifleShots++
+      vm.rifleT = 0
+    }
     camera.rotation.x = Math.min(Math.PI / 2, camera.rotation.x + VIEW_PUNCH[def.id] * rand(0.7, 1.2))
     camera.rotation.y += rand(-0.3, 0.3) * VIEW_PUNCH[def.id]
   }
@@ -238,6 +242,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
 
     // pistool: slede schiet naar achteren en veert terug
     s.slideT += delta
+    vm.rifleT += delta
     vm.recoil = s.slideT < 0.035 ? s.slideT / 0.035 : Math.max(0, 1 - (s.slideT - 0.035) / 0.09)
 
     lighting.sample(camera.position.x, camera.position.y, camera.position.z, undefined, light.current)

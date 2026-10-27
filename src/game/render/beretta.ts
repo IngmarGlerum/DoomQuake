@@ -14,7 +14,7 @@ export const BERETTA_SCALE = 0.0016
 type P = [number, number]
 
 /** Polygon met afgeronde hoeken als THREE.Shape. */
-function roundedShape(points: P[], radius: number | number[]): THREE.Shape {
+export function roundedShape(points: P[], radius: number | number[]): THREE.Shape {
   const shape = new THREE.Shape()
   const n = points.length
   const r = (i: number) => (Array.isArray(radius) ? radius[i] : radius)
@@ -43,7 +43,7 @@ function roundedShape(points: P[], radius: number | number[]): THREE.Shape {
   return shape
 }
 
-function roundedPath(points: P[], radius: number): THREE.Path {
+export function roundedPath(points: P[], radius: number): THREE.Path {
   const s = roundedShape(points, radius)
   const p = new THREE.Path()
   p.curves = s.curves
@@ -51,7 +51,7 @@ function roundedPath(points: P[], radius: number): THREE.Path {
 }
 
 /** Extrudeer een zijprofiel tot een plaat met dikte (mm), gecentreerd en gedraaid naar wapen-oriëntatie. */
-function plate(shape: THREE.Shape, thickness: number, bevel = 0.9, xOffset = 0): THREE.BufferGeometry {
+export function plate(shape: THREE.Shape, thickness: number, bevel = 0.9, xOffset = 0): THREE.BufferGeometry {
   const g = new THREE.ExtrudeGeometry(shape, {
     depth: Math.max(0.1, thickness - bevel * 2),
     bevelEnabled: true,
@@ -68,7 +68,7 @@ function plate(shape: THREE.Shape, thickness: number, bevel = 0.9, xOffset = 0):
 }
 
 /** Cilinder langs de loop-as (u), in mm. */
-function tube(radius: number, u0: number, u1: number, v: number, segments = 20): THREE.BufferGeometry {
+export function tube(radius: number, u0: number, u1: number, v: number, segments = 20): THREE.BufferGeometry {
   const g = new THREE.CylinderGeometry(radius, radius, u1 - u0, segments, 1)
   g.rotateX(Math.PI / 2)
   g.translate(0, v, -(u0 + u1) / 2)
@@ -77,7 +77,7 @@ function tube(radius: number, u0: number, u1: number, v: number, segments = 20):
 
 // ---------- textures ----------
 
-interface SideTex {
+export interface SideTex {
   map: THREE.CanvasTexture
   normal: THREE.CanvasTexture
   rough: THREE.CanvasTexture
@@ -87,7 +87,7 @@ interface SideTex {
  * Tekenoppervlak voor een zijkant: (u, v) in mm → canvas-pixels. Links in het canvas is de loop
  * (zo lezen gravures op de linkerkant van het wapen gewoon van links naar rechts).
  */
-function sideCanvas(u0: number, u1: number, v0: number, v1: number, ppm: number) {
+export function sideCanvas(u0: number, u1: number, v0: number, v1: number, ppm: number) {
   const w = Math.round((u1 - u0) * ppm)
   const h = Math.round((v1 - v0) * ppm)
   const make = () => {
@@ -158,7 +158,7 @@ export function heightToNormal(src: HTMLCanvasElement, strength: number): HTMLCa
 }
 
 /** Fijne korrel (gestraald oppervlak) op kleur-, hoogte- en ruwheidskaart. */
-function grain(c: ReturnType<typeof sideCanvas>, base: [number, number, number], amount: number, seed: string) {
+export function grain(c: ReturnType<typeof sideCanvas>, base: [number, number, number], amount: number, seed: string) {
   const rng = makeRng(seed)
   for (const [ctx, kind] of [
     [c.cx, 'color'],

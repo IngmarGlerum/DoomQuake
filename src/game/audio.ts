@@ -209,6 +209,14 @@ export const sfx = {
     noise(o, 0.04, 6000, 2000, 0.4, 'highpass')
     tone(o, 'sine', 900, 880, 0.12, 0.1, 0.02)
   }),
+  /** lege huls die op de grond tikt en nog even nastuitert */
+  casing: sound(0.16, (o) => {
+    const f = 3800 + Math.random() * 1400
+    tone(o, 'sine', f, f * 0.97, 0.06, 0.5)
+    tone(o, 'sine', f * 1.31, f * 1.28, 0.04, 0.25, 0.003)
+    tone(o, 'sine', f * 1.02, f, 0.04, 0.22, 0.09 + Math.random() * 0.04)
+    tone(o, 'sine', f * 0.98, f * 0.96, 0.03, 0.1, 0.16 + Math.random() * 0.05)
+  }),
   click: sound(0.6, (o) => tone(o, 'square', 900, 700, 0.04, 0.1)),
   weaponSwitch: sound(0.5, (o) => {
     noise(o, 0.06, 2500, 1500, 0.3, 'bandpass')

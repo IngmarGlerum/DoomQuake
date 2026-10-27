@@ -16,8 +16,8 @@ npm test         # generator-tests (determinisme + speelbaarheid over 150 seeds)
 npm run build
 ```
 
-**Besturing:** WASD/pijltjes lopen · muis kijken · klik schieten (machine gun: ingedrukt houden) ·
-1–5 of scrollwiel: heavy pistol / shotgun / machine gun / rocket launcher / disk launcher · spatie springen (ingedrukt houden = bunnyhop) ·
+**Besturing:** WASD/pijltjes lopen · muis kijken · klik schieten (assault rifle: ingedrukt houden) ·
+1–5 of scrollwiel: heavy pistol / shotgun / assault rifle / rocket launcher / disk launcher · spatie springen (ingedrukt houden = bunnyhop) ·
 M kaart · N noclip · G nieuw level · Esc pauze.
 
 **Mobiel (landscape):** linkerduim = zwevende joystick · rechterduim slepen = kijken · 🔥 = schieten
@@ -56,7 +56,7 @@ Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`).
 - **Quake-achtige movement**: grondwrijving, acceleratie, air strafing en bunnyhop, met een vaste tijdstap van 120 Hz
   en Rapier character controller (autostep voor trappen)
 - Low-res rendering (300px hoog, pixelig opgeschaald) + fog
-- **Wapens** (`src/game/combat/weapons.ts`): heavy pistol, shotgun (8 hagels), machine gun (automatisch) en
+- **Wapens** (`src/game/combat/weapons.ts`): heavy pistol, shotgun (8 hagels), assault rifle (automatisch) en
   rocket launcher; hitscan via Rapier-raycasts, terugslag, view punch en drie munitiesoorten (bullets/shells/rockets)
 - **Raketten en explosies** (`src/game/combat/explosions.ts`): projectiel met rookspoor, splash damage die niet
   door muren gaat, self-damage en knockback, dus rocket jumps (recht naar beneden schieten + springen)
@@ -84,6 +84,11 @@ Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`).
   afgeronde randen (open slede met zichtbare loop, haan, decocker, vizieren met witte stippen, trekkerbeugel),
   procedurele textures met normal maps (gestraald staal, kartels, gravure "PIETRO BERETTA", geruite grip met
   medaillon en schroeven) en een terugslaande slede bij elk schot
+- **ARX160-aanvalsgeweer** (`src/game/render/arx160.ts`): hoekige polymeer behuizing met naden, ventilatiesleuven en
+  ingegoten opschrift, doorlopende picatinny-rail, opklapbare vizieren, gestippelde greep, gebogen magazijn,
+  telescoopkolf en vlamdemper met sleuven. Bij elk schot slaan grendel en laadhendel terug, flitst een mondingsvuur
+  (gekruiste vlammentongen, zijstralen uit de vlamdemper en een ster, elk schot anders) en vliegt een lege
+  5.56-huls tollend uit de uitwerppoort, met getik als hij de grond raakt
 - **Viewmodel-laag** (`src/game/player/ViewmodelCanvas.tsx`): wapens worden in een eigen canvas op hogere resolutie
   getekend, met belichting die meekleurt met het level en reflecties; de wereld blijft retro-pixelig
 - Positionele audio: volume op afstand en stereo-panning t.o.v. je kijkrichting

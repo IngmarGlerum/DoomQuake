@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { WeaponId } from '../combat/weapons'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { buildRifle } from './arx160'
 import { buildBeretta } from './beretta'
 import { weaponGeometry as GEOMETRY } from './models'
 
@@ -27,9 +28,9 @@ export function getWeaponIcons(): Record<WeaponId, string> {
   for (const id of Object.keys(GEOMETRY) as WeaponId[]) {
     const scene = new THREE.Scene()
     let mesh: THREE.Object3D
-    if (id === 'pistol') {
-      // het gedetailleerde pistool, met licht en reflecties
-      mesh = new THREE.Group().add(buildBeretta().root)
+    if (id === 'pistol' || id === 'machinegun') {
+      // de gedetailleerde modellen, met licht en reflecties
+      mesh = new THREE.Group().add(id === 'pistol' ? buildBeretta().root : buildRifle().root)
       scene.environment = env
       scene.environmentIntensity = 1.6
       scene.add(new THREE.HemisphereLight(0xe8eef8, 0x403830, 3))

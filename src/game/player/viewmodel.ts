@@ -23,4 +23,9 @@ export const vm = {
   pistolMuzzle: new THREE.Vector3(0.18, -0.19, -0.71),
   /** hoe ver de slede van het pistool naar achteren staat (0..1) */
   recoil: 0,
+  /** loopmond van het aanvalsgeweer (camera-coördinaten), door het viewmodel bijgewerkt */
+  rifleMuzzle: new THREE.Vector3(0.22, -0.23, -1.22),
+  /** aantal schoten met het geweer (nieuw schot → mondingsvuur + huls) en tijd sinds het laatste */
+  rifleShots: 0,
+  rifleT: 99,
 }

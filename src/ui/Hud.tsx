@@ -86,8 +86,8 @@ export function Hud({ level }: { level: Level }) {
                 <tbody>
                   <tr><td>WASD / pijltjes</td><td>lopen</td></tr>
                   <tr><td>muis</td><td>rondkijken</td></tr>
-                  <tr><td>klik</td><td>schieten (machine gun: ingedrukt houden)</td></tr>
-                  <tr><td>1 – 5, scrollwiel</td><td>pistol / shotgun / machine gun / rocket launcher / disk launcher</td></tr>
+                  <tr><td>klik</td><td>schieten (assault rifle: ingedrukt houden)</td></tr>
+                  <tr><td>1 – 5, scrollwiel</td><td>pistol / shotgun / assault rifle / rocket launcher / disk launcher</td></tr>
                   <tr><td>spatie</td><td>springen (houd ingedrukt om te bunnyhoppen)</td></tr>
                   <tr><td>M</td><td>kaart aan/uit</td></tr>
                   <tr><td>N</td><td>noclip (vrij vliegen, spatie/C = omhoog/omlaag)</td></tr>
