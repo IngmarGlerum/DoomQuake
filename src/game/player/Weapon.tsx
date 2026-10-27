@@ -5,6 +5,7 @@ import { sfx } from '../audio'
 import { fx } from '../combat/Effects'
 import { spawnDisk } from '../combat/Disks'
 import { ROCKET_EXPLOSION, explode } from '../combat/explosions'
+import { ricochetOnMiss } from '../combat/ricochet'
 import { raycast, runtime } from '../combat/runtime'
 import { WEAPONS, type AmmoType, type WeaponDef, type WeaponId } from '../combat/weapons'
 import { damageEnemy } from '../enemies/damage'
@@ -183,7 +184,11 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
         if (fleshSounds++ < 2) sfx.flesh(hit.point)
       } else {
         fx.wallImpact(hit.point, hit.normal, hit.collider.parent()?.isFixed() ?? true)
-        if (wallSounds++ < 2) sfx.ricochet(hit.point)
+        if (def.id === 'pistol' || def.id === 'machinegun') {
+          // inslag altijd, afketsen gemiddeld bij één op de drie missers (zie ricochet.ts)
+          sfx.impact(hit.point)
+          if (ricochetOnMiss()) sfx.ricochetSample(hit.point)
+        } else if (wallSounds++ < 2) sfx.ricochet(hit.point)
       }
     }
   }

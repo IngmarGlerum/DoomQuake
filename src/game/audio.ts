@@ -1,6 +1,8 @@
 import machinegunM4a from '../assets/sounds/machinegun.m4a?url'
 import machinegunOgg from '../assets/sounds/machinegun.ogg?url'
 import pistolM4a from '../assets/sounds/pistol.m4a?url'
+import ricochetM4a from '../assets/sounds/ricochet.m4a?url'
+import ricochetOgg from '../assets/sounds/ricochet.ogg?url'
 import pistolOgg from '../assets/sounds/pistol.ogg?url'
 import { player } from './store'
 
@@ -193,6 +195,7 @@ async function loadSample(name: string, urls: { ogg: string; m4a: string }) {
 if (typeof window !== 'undefined') {
   void loadSample('pistol', { ogg: pistolOgg, m4a: pistolM4a })
   void loadSample('machinegun', { ogg: machinegunOgg, m4a: machinegunM4a })
+  void loadSample('ricochet', { ogg: ricochetOgg, m4a: ricochetM4a })
 }
 
 /** Speel een sample af; false als hij (nog) niet geladen is. */
@@ -251,6 +254,8 @@ const machinegunSynth = sound(0.7, (o) => {
 })
 /** lengte van één vak in machinegun.ogg/m4a (zie playSlice) */
 const MACHINEGUN_SLOT = 0.12
+/** ricochet.ogg/m4a: vijf opgenomen ricochets (drie uit één opname, twee op metaal), vakken van 0,9 s */
+const RICOCHET_SLOT = 0.9
 
 export const sfx = {
   // wapens van de speler
@@ -325,6 +330,12 @@ export const sfx = {
   }),
 
   // inslagen
+  /** kogel die in een muur slaat (zonder afketsen) */
+  impact: sound(0.6, (o) => noise(o, 0.07, 6000, 1500, 0.4, 'highpass')),
+  /** opgenomen ricochet, round robin uit vijf opnames, met wat kamergalm */
+  ricochetSample: (pos?: Pos) => {
+    playSlice('ricochet', RICOCHET_SLOT, pos, 0.7, 0.07, 0.3)
+  },
   ricochet: sound(0.6, (o) => {
     noise(o, 0.07, 6000, 1500, 0.4, 'highpass')
     if (Math.random() < 0.45) tone(o, 'sine', 2600 + Math.random() * 1500, 700, 0.18, 0.12, 0.01)
