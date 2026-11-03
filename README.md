@@ -20,6 +20,13 @@ npm run build
 1–5 of scrollwiel: heavy pistol / shotgun / assault rifle / rocket launcher / disk launcher · spatie springen (ingedrukt houden = bunnyhop) ·
 M kaart · N noclip · G nieuw level · Esc pauze.
 
+**Controller:** een DualSense, Xbox- of andere controller werkt via de Gamepad API, ook in Safari op een iPhone met
+een via Bluetooth verbonden DualSense. Druk na het openen van de pagina één keer op een knop (browsers tonen een
+controller pas daarna). Linker stick lopen · rechter stick kijken · R2 schieten · L2 richten (trager draaien op een
+vijand) · ✕ springen · R1/L1 wapen wisselen · D-pad ← pistol, → shotgun, ↑ assault rifle, ↓ rocket launcher ·
+△ kaart · Options pauze. Met een controller verdwijnen de touch-knoppen; tikken op het scherm brengt ze terug.
+Trillen werkt als de browser het ondersteunt (`src/game/player/gamepad.ts`).
+
 **Mobiel (landscape):** linkerduim = zwevende joystick · rechterduim slepen = kijken · 🔥 = schieten
 (vasthouden en slepen om te richten) · ⤒ = springen · tik op een wapenicoon om te wisselen. Houd je telefoon
 opzij; in portretstand verschijnt een melding. Op Android gaat het spel fullscreen in landscape; op iPhone werkt

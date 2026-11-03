@@ -48,6 +48,10 @@ interface GameState {
   addKill(): void
   win(): void
   setLocked(locked: boolean): void
+  /** wordt er met een controller gespeeld (en welke) */
+  controller: boolean
+  controllerName: string
+  setController(active: boolean, name: string): void
   toggleMap(): void
   toggleNoclip(): void
 }
@@ -83,6 +87,8 @@ export const useGame = create<GameState>()((set, get) => ({
   run: 0,
   ...fresh(),
   locked: false,
+  controller: false,
+  controllerName: '',
   // op kleine schermen staat de kaart standaard uit
   showMap: !window.matchMedia?.('(pointer: coarse)').matches,
   noclip: false,
@@ -169,6 +175,9 @@ export const useGame = create<GameState>()((set, get) => ({
   },
   win() {
     if (get().status === 'playing') set({ status: 'won' })
+  },
+  setController(controller, controllerName) {
+    set({ controller, controllerName })
   },
   setLocked(locked) {
     set({ locked })

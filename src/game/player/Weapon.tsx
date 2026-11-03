@@ -13,12 +13,21 @@ import { spawnRocket } from '../enemies/Projectiles'
 import type { Lighting, RGB } from '../render/lighting'
 import { diskSeat } from '../render/models'
 import { player, useGame } from '../store'
+import { pad, rumble } from './gamepad'
 import { fireButton } from './input'
 import { vm } from './viewmodel'
 
 /** hoeveel de camera omhoog schopt per schot */
 const VIEW_PUNCH: Record<WeaponId, number> = { pistol: 0.014, shotgun: 0.03, machinegun: 0.005, rocket: 0.04, disk: 0.012 }
 const SWITCH_TIME = 0.16
+/** trillen van de controller per schot: [sterk, zwak, ms] */
+const RUMBLE: Record<WeaponId, [number, number, number]> = {
+  pistol: [0.35, 0.2, 60],
+  shotgun: [0.9, 0.5, 140],
+  machinegun: [0.22, 0.35, 45],
+  rocket: [1, 0.6, 200],
+  disk: [0.3, 0.45, 70],
+}
 const AMMO_NAME: Record<AmmoType, string> = { bullets: 'kogels', shells: 'shells', rockets: 'raketten', disks: 'disks' }
 const MAX_RANGE = 120
 
@@ -102,6 +111,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     runtime.lastShot = { x: camera.position.x, z: camera.position.z, time: performance.now() }
 
     sfx[def.id]()
+    if (pad.connected) rumble(...RUMBLE[def.id])
     if (def.id === 'disk') {
       fx.flash(muzzle, 0.8, [1.4, 1.6, 2], 0.05)
     } else {
@@ -215,11 +225,12 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
 
     s.cooldown = Math.max(0, s.cooldown - delta)
     const ready = game.locked && game.status === 'playing' && wanted === s.shown && s.lower < 0.2
-    const pressed = s.pressed || fireButton.pressed
-    const held = s.held || fireButton.held
+    const pressed = s.pressed || fireButton.pressed || pad.firePressed
+    const held = s.held || fireButton.held || pad.fire
     if (ready && s.cooldown <= 0 && (pressed || (held && def.auto))) {
       s.pressed = false
       fireButton.pressed = false
+      pad.firePressed = false
       if (game.useAmmo()) {
         fire(def)
         s.cooldown = def.cooldown

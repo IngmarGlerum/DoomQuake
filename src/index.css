@@ -268,6 +268,12 @@ body,
   }
 }
 
+.overlay .pad-hint {
+  margin: 10px 0 0;
+  font-size: 20px;
+  color: #a0c8ff;
+}
+
 /* ---------- levelkeuze ---------- */
 
 .level-picker {
@@ -571,7 +577,8 @@ body {
     padding: 0 10px;
   }
 
-  .overlay .hint {
+  .overlay .hint,
+  .overlay .pad-hint {
     font-size: 14px;
   }
 

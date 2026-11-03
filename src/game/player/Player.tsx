@@ -7,6 +7,8 @@ import { sfx } from '../audio'
 import { runtime } from '../combat/runtime'
 import { CELL, type Level } from '../level/types'
 import { player, useGame } from '../store'
+import { raycast } from '../combat/runtime'
+import { AIM_SLOWDOWN, pad, pollGamepad } from './gamepad'
 import { look, readMoveInput } from './input'
 import { MOVE, accelerate, applyFriction } from './movement'
 
@@ -178,8 +180,24 @@ export function Player({ level }: { level: Level }) {
     }
   }
 
+  const aimDir = new THREE.Vector3()
+
   useFrame((_, delta) => {
     const s = sim.current
+
+    // controller: rechter stick draait de camera; met L2 trager zolang het vizier op een vijand staat
+    pollGamepad(delta)
+    if (pad.yawRate || pad.pitchRate) {
+      let k = Math.min(delta, 0.05)
+      if (pad.aim) {
+        camera.getWorldDirection(aimDir)
+        const hit = raycast(camera.position, aimDir, 45)
+        if (hit?.enemy) k *= AIM_SLOWDOWN
+      }
+      camera.rotation.order = 'YXZ'
+      camera.rotation.y += pad.yawRate * k
+      camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x + pad.pitchRate * k))
+    }
 
     // kijken met touch (slepen); muis gaat via PointerLockControls
     if (look.dx || look.dy) {

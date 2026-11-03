@@ -20,7 +20,7 @@ export const LEVELS: Record<LevelKind, LevelInfo> = {
   caves: {
     kind: 'caves',
     name: 'Grotbasis',
-    description: 'Kronkelige grotten met een kwaadaardige basis. Nog geen vijanden.',
+    description: 'Kronkelige grotten met een kwaadaardige basis, mutanten en klauwbeesten.',
     generate: (seed) => generateCaveLevel(seed),
   },
 }

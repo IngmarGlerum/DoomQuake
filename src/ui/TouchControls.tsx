@@ -52,6 +52,7 @@ export function usePortrait() {
 export function TouchControls() {
   const locked = useGame((s) => s.locked)
   const status = useGame((s) => s.status)
+  const controller = useGame((s) => s.controller)
   const portrait = usePortrait()
 
   const base = useRef<HTMLDivElement>(null)
@@ -146,7 +147,8 @@ export function TouchControls() {
   }
 
   if (portrait) return <RotatePrompt />
-  if (!locked || status !== 'playing') return null
+  // met een controller geen touch-knoppen in beeld (tikken op het scherm schakelt terug)
+  if (!locked || status !== 'playing' || controller) return null
 
   return (
     <div className="touch-layer" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>

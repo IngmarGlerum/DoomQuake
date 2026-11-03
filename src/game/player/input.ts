@@ -1,4 +1,6 @@
-/** Globale input-state (toetsenbord + touch), los van React. */
+import { pad } from './gamepad'
+
+/** Globale input-state (toetsenbord + touch + controller), los van React. */
 const down = new Set<string>()
 
 window.addEventListener('keydown', (e) => down.add(e.code))
@@ -29,9 +31,9 @@ export function readMoveInput() {
   const keyForward = (isDown('KeyW', 'ArrowUp') ? 1 : 0) - (isDown('KeyS', 'ArrowDown') ? 1 : 0)
   const keyStrafe = (isDown('KeyD', 'ArrowRight') ? 1 : 0) - (isDown('KeyA', 'ArrowLeft') ? 1 : 0)
   return {
-    forward: Math.max(-1, Math.min(1, keyForward + touch.forward)),
-    strafe: Math.max(-1, Math.min(1, keyStrafe + touch.strafe)),
-    jump: isDown('Space') || touch.jump,
+    forward: Math.max(-1, Math.min(1, keyForward + touch.forward + pad.forward)),
+    strafe: Math.max(-1, Math.min(1, keyStrafe + touch.strafe + pad.strafe)),
+    jump: isDown('Space') || touch.jump || pad.jump,
     down: isDown('ControlLeft', 'KeyC'),
   }
 }

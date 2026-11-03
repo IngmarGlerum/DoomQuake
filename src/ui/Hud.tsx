@@ -12,7 +12,7 @@ import { startTouchPlay } from './TouchControls'
 const MESSAGE_MS = 2500
 
 export function Hud({ level }: { level: Level }) {
-  const { health, armor, ammo, weapon, kills, enemies, hurtAt, hasKey, message, messageAt, status, locked, seed, noclip } = useGame()
+  const { health, armor, ammo, weapon, kills, enemies, hurtAt, hasKey, message, messageAt, status, locked, seed, noclip, controller, controllerName } = useGame()
   const icons = getWeaponIcons()
   const current = WEAPONS[weapon]
   const [now, setNow] = useState(() => performance.now())
@@ -62,39 +62,51 @@ export function Hud({ level }: { level: Level }) {
         <div className="overlay">
           <h1>RETRO SHOOTER</h1>
           <LevelPicker />
-          {isTouchDevice ? (
+          {controller ? (
             <>
-              <button className="overlay-btn" onClick={startTouchPlay}>
-                ▶ SPELEN
+              <button className="overlay-btn" onClick={isTouchDevice ? startTouchPlay : () => pointerLock.lock()}>
+                ✕ SPELEN
               </button>
-              <table>
-                <tbody>
-                  <tr><td>linkerduim</td><td>joystick: lopen (verschijnt waar je drukt)</td></tr>
-                  <tr><td>rechterduim</td><td>slepen om rond te kijken</td></tr>
-                  <tr><td>🔥</td><td>schieten (vasthouden + slepen om te richten)</td></tr>
-                  <tr><td>⤒</td><td>springen</td></tr>
-                  <tr><td>wapenicoontjes</td><td>tikken om te wisselen</td></tr>
-                </tbody>
-              </table>
+              <ControllerHelp name={controllerName} />
             </>
           ) : (
             <>
-              <button className="overlay-btn" onClick={() => pointerLock.lock()}>
-                ▶ SPELEN
-              </button>
-              <table>
-                <tbody>
-                  <tr><td>WASD / pijltjes</td><td>lopen</td></tr>
-                  <tr><td>muis</td><td>rondkijken</td></tr>
-                  <tr><td>klik</td><td>schieten (assault rifle: ingedrukt houden)</td></tr>
-                  <tr><td>1 – 5, scrollwiel</td><td>pistol / shotgun / assault rifle / rocket launcher / disk launcher</td></tr>
-                  <tr><td>spatie</td><td>springen (houd ingedrukt om te bunnyhoppen)</td></tr>
-                  <tr><td>M</td><td>kaart aan/uit</td></tr>
-                  <tr><td>N</td><td>noclip (vrij vliegen, spatie/C = omhoog/omlaag)</td></tr>
-                  <tr><td>G</td><td>nieuw willekeurig level</td></tr>
-                  <tr><td>Esc</td><td>pauze</td></tr>
-                </tbody>
-              </table>
+            {isTouchDevice ? (
+              <>
+                <button className="overlay-btn" onClick={startTouchPlay}>
+                  ▶ SPELEN
+                </button>
+                <table>
+                  <tbody>
+                    <tr><td>linkerduim</td><td>joystick: lopen (verschijnt waar je drukt)</td></tr>
+                    <tr><td>rechterduim</td><td>slepen om rond te kijken</td></tr>
+                    <tr><td>🔥</td><td>schieten (vasthouden + slepen om te richten)</td></tr>
+                    <tr><td>⤒</td><td>springen</td></tr>
+                    <tr><td>wapenicoontjes</td><td>tikken om te wisselen</td></tr>
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <>
+                <button className="overlay-btn" onClick={() => pointerLock.lock()}>
+                  ▶ SPELEN
+                </button>
+                <table>
+                  <tbody>
+                    <tr><td>WASD / pijltjes</td><td>lopen</td></tr>
+                    <tr><td>muis</td><td>rondkijken</td></tr>
+                    <tr><td>klik</td><td>schieten (assault rifle: ingedrukt houden)</td></tr>
+                    <tr><td>1 – 5, scrollwiel</td><td>pistol / shotgun / assault rifle / rocket launcher / disk launcher</td></tr>
+                    <tr><td>spatie</td><td>springen (houd ingedrukt om te bunnyhoppen)</td></tr>
+                    <tr><td>M</td><td>kaart aan/uit</td></tr>
+                    <tr><td>N</td><td>noclip (vrij vliegen, spatie/C = omhoog/omlaag)</td></tr>
+                    <tr><td>G</td><td>nieuw willekeurig level</td></tr>
+                    <tr><td>Esc</td><td>pauze</td></tr>
+                  </tbody>
+                </table>
+              </>
+            )}
+              <p className="pad-hint">🎮 Controller? Verbind hem en druk op een knop.</p>
             </>
           )}
           <p className="hint">Zoek de rode sleutel, open de rode deur en bereik de EXIT.</p>
@@ -103,7 +115,9 @@ export function Hud({ level }: { level: Level }) {
       {status === 'won' && (
         <div className="overlay">
           <h1>LEVEL VOLTOOID</h1>
-          {isTouchDevice ? (
+          {controller ? (
+            <p className="blink">✕ volgend level · ○ dit level opnieuw</p>
+          ) : isTouchDevice ? (
             <div className="overlay-buttons">
               <button className="overlay-btn" onClick={() => useGame.getState().newLevel()}>Volgend level</button>
               <button className="overlay-btn secondary" onClick={() => useGame.getState().restart()}>Opnieuw</button>
@@ -116,7 +130,9 @@ export function Hud({ level }: { level: Level }) {
       {status === 'dead' && (
         <div className="overlay dead">
           <h1>JE BENT DOOD</h1>
-          {isTouchDevice ? (
+          {controller ? (
+            <p className="blink">✕ opnieuw</p>
+          ) : isTouchDevice ? (
             <button className="overlay-btn" onClick={() => useGame.getState().restart()}>Opnieuw</button>
           ) : (
             <p className="blink">Enter of R: opnieuw</p>
@@ -124,6 +140,25 @@ export function Hud({ level }: { level: Level }) {
         </div>
       )}
     </div>
+  )
+}
+
+/** Uitleg van de controllerknoppen (DualSense-namen; op een Xbox-controller zitten ze op dezelfde plek). */
+function ControllerHelp({ name }: { name: string }) {
+  const short = name.split('(')[0].trim().slice(0, 40) || 'Controller'
+  return (
+    <>
+      <table>
+        <tbody>
+          <tr><td>sticks</td><td>links lopen · rechts rondkijken</td></tr>
+          <tr><td>R2 · L2</td><td>schieten · richten (trager draaien op een vijand)</td></tr>
+          <tr><td>R1 · L1</td><td>volgend · vorig wapen</td></tr>
+          <tr><td>D-pad</td><td>← pistol · → shotgun · ↑ rifle · ↓ rocket</td></tr>
+          <tr><td>✕ · △ · Options</td><td>springen · kaart · pauze</td></tr>
+        </tbody>
+      </table>
+      <p className="pad-hint">🎮 {short} verbonden</p>
+    </>
   )
 }
 
