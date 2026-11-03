@@ -20,6 +20,11 @@ npm run build
 1–5 of scrollwiel: heavy pistol / shotgun / assault rifle / rocket launcher / disk launcher · spatie springen (ingedrukt houden = bunnyhop) ·
 M kaart · N noclip · G nieuw level · Esc pauze.
 
+**Volledig scherm:** knop op het start-/pauzescherm, toets F, of de Create-knop op de controller (als de browser
+dat toestaat). Op Android gaat de game bij SPELEN vanzelf naar volledig scherm; tijdens het spelen zit er ook een
+knop rechtsboven. Safari op de iPhone kent geen volledig scherm voor webpagina's: tik op Deel › Zet op beginscherm
+en start de game vanaf je beginscherm, dan draait hij als app zonder browserbalken.
+
 **Controller:** een DualSense, Xbox- of andere controller werkt via de Gamepad API, ook in Safari op een iPhone met
 een via Bluetooth verbonden DualSense. Druk na het openen van de pagina één keer op een knop (browsers tonen een
 controller pas daarna). Linker stick lopen · rechter stick kijken · R2 schieten · L2 richten (trager draaien op een

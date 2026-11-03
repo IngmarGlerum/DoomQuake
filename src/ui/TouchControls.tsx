@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { unlockAudio } from '../game/audio'
+import { canFullscreen, enterFullscreen, toggleFullscreen, useFullscreen } from '../game/fullscreen'
 import { fireButton, look, touch } from '../game/player/input'
 import { useGame } from '../game/store'
 
@@ -18,11 +19,7 @@ function capture(e: ReactPointerEvent<HTMLElement>) {
 
 /** Volledig scherm + landscape vastzetten (werkt op Android; iOS negeert het netjes). */
 export async function enterFullscreenLandscape() {
-  try {
-    if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' })
-  } catch {
-    // niet ondersteund (bijv. iPhone Safari)
-  }
+  await enterFullscreen()
   try {
     const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }
     await orientation.lock?.('landscape')
@@ -54,6 +51,7 @@ export function TouchControls() {
   const status = useGame((s) => s.status)
   const controller = useGame((s) => s.controller)
   const portrait = usePortrait()
+  const fullscreen = useFullscreen()
 
   const base = useRef<HTMLDivElement>(null)
   const knob = useRef<HTMLDivElement>(null)
@@ -174,6 +172,16 @@ export function TouchControls() {
       </div>
 
       <div className="touch-top">
+        {canFullscreen && (
+          <button
+            className="touch-small"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => void toggleFullscreen()}
+            aria-label={fullscreen ? 'Volledig scherm uit' : 'Volledig scherm'}
+          >
+            {fullscreen ? '⤡' : '⛶'}
+          </button>
+        )}
         <button
           className="touch-small"
           onPointerDown={(e) => e.stopPropagation()}

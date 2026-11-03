@@ -1,5 +1,6 @@
 import { unlockAudio, sfx } from '../audio'
 import { WEAPONS, type WeaponId } from '../combat/weapons'
+import { toggleFullscreen } from '../fullscreen'
 import { useGame } from '../store'
 import { stick } from './stick'
 
@@ -123,6 +124,9 @@ export function pollGamepad(dt: number) {
 
   const game = useGame.getState()
   const playing = game.status === 'playing' && game.locked
+
+  // Create-knop: volledig scherm (lukt alleen als de browser een controllerknop als gebruikersactie telt)
+  if (pressed(B.share)) void toggleFullscreen()
 
   // menu's: starten, pauzeren, opnieuw
   if (game.status === 'playing' && !game.locked) {

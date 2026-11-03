@@ -8,6 +8,7 @@ import { useGame } from '../game/store'
 import { LEVEL_ORDER, LEVELS } from '../game/level/levels'
 import { pointerLock } from '../game/player/pointerLock'
 import { startTouchPlay } from './TouchControls'
+import { canFullscreen, isIPhone, isStandalone, toggleFullscreen, useFullscreen } from '../game/fullscreen'
 
 const MESSAGE_MS = 2500
 
@@ -101,6 +102,7 @@ export function Hud({ level }: { level: Level }) {
                     <tr><td>M</td><td>kaart aan/uit</td></tr>
                     <tr><td>N</td><td>noclip (vrij vliegen, spatie/C = omhoog/omlaag)</td></tr>
                     <tr><td>G</td><td>nieuw willekeurig level</td></tr>
+                    <tr><td>F</td><td>volledig scherm aan/uit</td></tr>
                     <tr><td>Esc</td><td>pauze</td></tr>
                   </tbody>
                 </table>
@@ -109,6 +111,7 @@ export function Hud({ level }: { level: Level }) {
               <p className="pad-hint">🎮 Controller? Verbind hem en druk op een knop.</p>
             </>
           )}
+          <FullscreenOption />
           <p className="hint">Zoek de rode sleutel, open de rode deur en bereik de EXIT.</p>
         </div>
       )}
@@ -143,6 +146,23 @@ export function Hud({ level }: { level: Level }) {
   )
 }
 
+/** Knop voor volledig scherm, of op een iPhone (geen fullscreen voor webpagina's) de tip om de game als app te openen. */
+function FullscreenOption() {
+  const on = useFullscreen()
+  if (canFullscreen) {
+    return (
+      <button className="overlay-btn secondary small" onClick={() => void toggleFullscreen()}>
+        {on ? '⤡ Venster' : '⛶ Volledig scherm'}
+        {!isTouchDevice && <span className="key-hint"> (F)</span>}
+      </button>
+    )
+  }
+  if (isIPhone && !isStandalone) {
+    return <p className="pad-hint">Volledig scherm: tik in Safari op Deel › Zet op beginscherm en start de game vanaf je beginscherm.</p>
+  }
+  return null
+}
+
 /** Uitleg van de controllerknoppen (DualSense-namen; op een Xbox-controller zitten ze op dezelfde plek). */
 function ControllerHelp({ name }: { name: string }) {
   const short = name.split('(')[0].trim().slice(0, 40) || 'Controller'
@@ -155,6 +175,7 @@ function ControllerHelp({ name }: { name: string }) {
           <tr><td>R1 · L1</td><td>volgend · vorig wapen</td></tr>
           <tr><td>D-pad</td><td>← pistol · → shotgun · ↑ rifle · ↓ rocket</td></tr>
           <tr><td>✕ · △ · Options</td><td>springen · kaart · pauze</td></tr>
+          <tr><td>Create</td><td>volledig scherm (als de browser het toestaat)</td></tr>
         </tbody>
       </table>
       <p className="pad-hint">🎮 {short} verbonden</p>

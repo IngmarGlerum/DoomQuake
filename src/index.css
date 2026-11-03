@@ -368,6 +368,17 @@ body {
   box-shadow: none;
 }
 
+.overlay-btn.small {
+  font-size: 22px;
+  letter-spacing: 1px;
+  padding: 4px 16px;
+  margin: 10px 0 0;
+}
+
+.overlay-btn .key-hint {
+  color: #888;
+}
+
 .overlay-buttons {
   display: flex;
   gap: 8px;
@@ -607,6 +618,12 @@ body {
   .overlay-btn {
     font-size: 26px;
     padding: 2px 22px;
+  }
+
+  .overlay-btn.small {
+    font-size: 16px;
+    padding: 1px 12px;
+    margin-top: 4px;
   }
 
   .overlay table {

@@ -23,6 +23,7 @@ import { Hud } from './ui/Hud'
 import { Minimap } from './ui/Minimap'
 import { TouchControls } from './ui/TouchControls'
 import { isTouchDevice } from './game/player/input'
+import { toggleFullscreen } from './game/fullscreen'
 
 /** Interne renderhoogte in pixels; het beeld wordt pixelig opgeschaald. */
 const RENDER_HEIGHT = 300
@@ -50,6 +51,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const game = useGame.getState()
       if (e.code === 'KeyM') game.toggleMap()
+      if (e.code === 'KeyF' && !e.repeat) void toggleFullscreen()
       if (e.code === 'KeyN') game.toggleNoclip()
       if (e.code === 'KeyG') game.newLevel()
       if (e.code === 'KeyR' && game.status !== 'playing') game.restart()
