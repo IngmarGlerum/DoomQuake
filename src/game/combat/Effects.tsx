@@ -11,6 +11,9 @@ import * as THREE from 'three'
  */
 const MAX_TRACERS = 64
 const MAX_PARTICLES = 700
+
+/** Weergave-instellingen: in het realistische gesticht zijn deeltjes (bloed, vonken) veel fijner. */
+export const fxSettings = { particleScale: 1 }
 const MAX_DECALS = 160
 const MAX_FLASHES = 48
 
@@ -324,7 +327,7 @@ export function Effects() {
         p.vel.y -= p.gravity * dt
         if (p.drag) p.vel.multiplyScalar(Math.max(0, 1 - p.drag * dt))
         p.pos.addScaledVector(p.vel, dt)
-        const s = p.size * (0.4 + 0.6 * (p.life / p.maxLife))
+        const s = p.size * fxSettings.particleScale * (0.4 + 0.6 * (p.life / p.maxLife))
         tmp.m.makeScale(s, s, s).setPosition(p.pos)
         pm.setMatrixAt(i, tmp.m)
         pm.setColorAt(i, p.color)

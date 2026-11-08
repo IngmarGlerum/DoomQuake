@@ -22,6 +22,11 @@ body,
   image-rendering: crisp-edges;
 }
 
+/* het gesticht wordt realistisch (op volle resolutie) getekend */
+.game.hd canvas {
+  image-rendering: auto;
+}
+
 .minimap {
   position: fixed;
   top: 12px;

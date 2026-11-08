@@ -1,6 +1,7 @@
 import { unlockAudio, sfx } from '../audio'
 import { WEAPONS, type WeaponId } from '../combat/weapons'
 import { toggleFullscreen } from '../fullscreen'
+import { flashlight } from './flashlight'
 import { useGame } from '../store'
 import { stick } from './stick'
 
@@ -168,6 +169,7 @@ export function pollGamepad(dt: number) {
   if (pressed(B.l1)) cycleWeapon(-1)
   for (const [b, id] of DPAD_WEAPON) if (pressed(b) && game.selectWeapon(WEAPONS.findIndex((w) => w.id === id))) sfx.weaponSwitch()
   if (pressed(B.triangle)) game.toggleMap()
+  if (pressed(B.square)) flashlight.toggle()
 }
 
 /** Volgend/vorig wapen, wapens zonder munitie overslaan (tenzij alles leeg is). */

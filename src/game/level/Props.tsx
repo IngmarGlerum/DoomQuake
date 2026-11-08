@@ -3,13 +3,17 @@ import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { Lighting } from '../render/lighting'
+import { bakedMaterial } from '../render/bakedMaterial'
 import { buildProps } from '../render/props'
 import { getTextures } from '../render/textures'
 import type { Level } from './types'
 
 /** Decor van de grotbasis: kasten, terminals, kooien, pijpen... met knipperende ledjes en schermen. */
 export function Props({ level, lighting }: { level: Level; lighting: Lighting }) {
-  const build = useMemo(() => (level.props?.length ? buildProps(level, lighting) : null), [level, lighting])
+  const realistic = level.kind === 'asylum'
+  const build = useMemo(() => (level.props?.length ? buildProps(level, lighting, realistic) : null), [level, lighting, realistic])
+  const solidMat = useMemo(() => (realistic ? bakedMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.1 }) : null), [realistic])
+  useEffect(() => () => solidMat?.dispose(), [solidMat])
   const leds = useRef<THREE.InstancedMesh>(null)
   const screenMat = useRef<THREE.MeshBasicMaterial>(null)
   const screenTex = useMemo(() => {
@@ -69,11 +73,14 @@ export function Props({ level, lighting }: { level: Level; lighting: Lighting })
   if (!build) return null
   return (
     <>
-      {build.solid && (
-        <mesh geometry={build.solid}>
-          <meshBasicMaterial vertexColors />
-        </mesh>
-      )}
+      {build.solid &&
+        (solidMat ? (
+          <mesh geometry={build.solid} material={solidMat} castShadow receiveShadow />
+        ) : (
+          <mesh geometry={build.solid}>
+            <meshBasicMaterial vertexColors />
+          </mesh>
+        ))}
       {build.glow && (
         <mesh geometry={build.glow}>
           <meshBasicMaterial vertexColors toneMapped={false} />

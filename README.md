@@ -51,19 +51,27 @@ Kies in het beginscherm tussen:
   Slingerende tunnels, rotswanden met grillige hoeken, basiskamers met een functie (serverruimte, controlekamer,
   lab met opengewrongen kooien, opslag, reactor), automatische schuifdeuren met een zwart-geel kozijn, pijpen,
   kabels en lampen. Hier wonen alleen de mutant en het klauwbeest (de vijanden uit level 1 komen er niet voor).
-- **Level 3: Gesticht**: een verlaten, griezelig gesticht (`src/game/level/generateAsylum.ts`). Je wordt wakker in
-  een oude cel (ijzeren bed, raam met luiken, po). Koele tegelgangen met cyaan lichtstrips langs de muren en hier en
-  daar een kapotte tl-lamp, zalen met ziekenhuisbedden, kamerschermen en tv's aan het plafond, onderzoekskamers met
-  een tafel met riemen en bloed op de vloer, gecapitonneerde isoleercellen, en een hoge hal met een loopbrug van
-  roosters en relingen boven een diepe schacht, met een hangende cabine. Doorlopend sfeergeluid: een lage drone,
-  het gezoem van tl-buizen en af en toe een verre kreet. Nog zonder vijanden.
-  - **Patiënten** (`src/game/npcs/Patients.tsx`) lopen rond, ijsberen, staan wiegend tegen de muur of staan stil met
-    af en toe een trekking. Kom je dichtbij, dan blijven ze staan, draaien langzaam naar je toe, volgen je met hun
-    hoofd en mompelen. Kogels gaan door ze heen; je botst er wel tegenaan.
-  - Hun bewegingen zijn echte motion capture uit de Mixamo-bibliotheek (Adobe), via het gerigde Xbot-model uit de
-    voorbeelden van three.js (`src/assets/models/patient.glb`): stilstaan en lopen worden gemengd, en houdingen
-    (gebogen, sluipend, hoofdschudden, knikken) worden er additief overheen gelegd. Het ziekenhuishemd en de bleke
-    huid worden in de shader op het model geschilderd.
+- **Level 3: Gesticht**: een verlaten, griezelig gesticht (`src/game/level/generateAsylum.ts`), als enige level
+  **realistisch** getekend in plaats van retro: volle resolutie, fysiek gebaseerde materialen met zelf gegenereerde
+  hoge-resolutie-textures (geglazuurde tegels, vloertegels, systeemplafond, capitonnering, pleisterwerk, houten
+  vloer, zeshoekig rooster; elk met normal map en ruwheid, `src/game/render/realisticTextures.ts`), de vooraf
+  berekende belichting als basis plus echte lampen: een **zaklamp** met schaduwen (L of □ op de controller), en een
+  set lampen die de dichtstbijzijnde lichtbronnen volgt, waarvan sommige tl-buizen haperen
+  (`src/game/render/AsylumLights.tsx`, `bakedMaterial.ts`). Nabewerking met bloom, filmkorrel, vignet en nevel
+  (`src/game/render/PostFX.tsx`).
+  Je wordt wakker in een oude cel (ijzeren bed, raam met luiken, po). Koele tegelgangen met cyaan lichtstrips,
+  zalen met ziekenhuisbedden, kamerschermen en tv's aan het plafond, onderzoekskamers met een tafel met riemen en
+  bloed, isoleercellen, en een hoge hal met een loopbrug van roosters en relingen boven een schacht. Sfeergeluid:
+  een lage drone, tl-gezoem en af en toe een verre kreet.
+  - **Patiënten** (`src/game/npcs/Patients.tsx`): echte, gerigde personages (Michelle uit Mixamo en een
+    Ready Player Me-avatar, via de voorbeelden van three.js) in een lang patiëntenhemd of een dwangbuis met
+    gekruiste armen, soms met bloed. Ze bewegen met motion capture uit de Mixamo-bibliotheek (van het Xbot-skelet
+    naar hun eigen skelet geretarget, `src/game/npcs/retarget.ts`): stilstaan, lopen en rennen, met houdingen
+    (gebogen, sluipend, hoofdschudden, knikken) additief erover. Ze schuifelen rond, ijsberen, wiegen tegen de
+    muur of staan stil; kom je dichtbij, dan draaien ze naar je toe en volgen je met hun hoofd.
+  - **Val je een patiënt aan**, dan slaat die door: met gestrekte armen schuifelt hij op je af en haalt uit
+    (armen via een kleine IK bovenop de motion capture). Wie een dwangbuis draagt of bang is, rent weg. Na genoeg
+    schade valt de patiënt achterover neer. Alle wapens (ook raketten en de disk) raken patiënten.
 
 Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`, `level=asylum`).
 

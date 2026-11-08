@@ -149,6 +149,7 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
     if (blocked || (aim && aim.distance < 1.4)) {
       const at = blocked ? blocked.point.addScaledVector(blocked.normal, 0.2) : aim!.point.addScaledVector(aim!.normal, 0.25)
       if (aim?.enemy) damageEnemy(aim.enemy, Math.round(rand(...def.damage)), aim.point, forward)
+      else if (aim?.npc) aim.npc.hurt(Math.round(rand(...def.damage)), aim.point, forward)
       explode(at, ROCKET_EXPLOSION)
       return
     }
@@ -189,7 +190,10 @@ export function Weapon({ lighting }: { lighting: Lighting }) {
       const end = hit ? hit.point : camera.position.clone().addScaledVector(t.dir, MAX_RANGE)
       fx.tracer(muzzle, end, def.tracer)
       if (!hit) continue
-      if (hit.enemy) {
+      if (hit.npc) {
+        hit.npc.hurt(Math.round(rand(...def.damage)), hit.point, t.dir)
+        if (fleshSounds++ < 2) sfx.flesh(hit.point)
+      } else if (hit.enemy) {
         damageEnemy(hit.enemy, Math.round(rand(...def.damage)), hit.point, t.dir)
         if (fleshSounds++ < 2) sfx.flesh(hit.point)
       } else {

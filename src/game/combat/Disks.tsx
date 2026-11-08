@@ -8,7 +8,7 @@ import type { Lighting, RGB } from '../render/lighting'
 import { sawDiskGeometry } from '../render/models'
 import { useGame } from '../store'
 import { fx } from './Effects'
-import { raycast, runtime } from './runtime'
+import { raycast, runtime , type NpcTarget } from './runtime'
 
 const MAX = 16
 const SPEED = 22
@@ -31,6 +31,7 @@ interface Disk {
   glint: number
   /** vijand-id → tijdstip waarop deze disk hem het laatst raakte */
   lastHit: Map<number, number>
+  lastNpcHit: Map<NpcTarget, number>
 }
 
 const pool: Disk[] = Array.from({ length: MAX }, () => ({
@@ -43,6 +44,7 @@ const pool: Disk[] = Array.from({ length: MAX }, () => ({
   spin: 0,
   glint: 0,
   lastHit: new Map(),
+  lastNpcHit: new Map(),
 }))
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a)
@@ -61,6 +63,7 @@ export function spawnDisk(from: THREE.Vector3, dir: THREE.Vector3, damage: [numb
   d.spin = Math.random() * Math.PI * 2
   d.glint = 0
   d.lastHit.clear()
+  d.lastNpcHit.clear()
 }
 
 const tmpHit = new THREE.Vector3()
@@ -92,6 +95,27 @@ function sweepEnemies(d: Disk, from: THREE.Vector3, dir: THREE.Vector3, len: num
     d.lastHit.set(e.id, now)
     tmpHit.set(px, py, pz)
     damageEnemy(e, Math.round(rand(...d.damage)), tmpHit.clone(), dir.clone())
+    fx.fleshImpact(tmpHit, dir, 2.5)
+    sfx.rend(tmpHit)
+  }
+  // patiënten: zelfde test, eigen 'laatst geraakt'-administratie
+  for (const n of runtime.npcs) {
+    if (!n.alive()) continue
+    const vx = dir.x * len
+    const vz = dir.z * len
+    const lenSq = vx * vx + vz * vz
+    let t = lenSq > 1e-8 ? ((n.pos.x - from.x) * vx + (n.pos.z - from.z) * vz) / lenSq : 0
+    t = Math.max(0, Math.min(1, t))
+    const px = from.x + vx * t
+    const pz = from.z + vz * t
+    const py = from.y + dir.y * len * t
+    if (Math.hypot(n.pos.x - px, n.pos.z - pz) > n.radius + RADIUS * 0.8) continue
+    if (py < n.pos.y - 0.1 || py > n.pos.y + n.height + 0.1) continue
+    const last = d.lastNpcHit.get(n)
+    if (last !== undefined && now - last < REHIT_DELAY) continue
+    d.lastNpcHit.set(n, now)
+    tmpHit.set(px, py, pz)
+    n.hurt(Math.round(rand(...d.damage)), tmpHit.clone(), dir.clone())
     fx.fleshImpact(tmpHit, dir, 2.5)
     sfx.rend(tmpHit)
   }

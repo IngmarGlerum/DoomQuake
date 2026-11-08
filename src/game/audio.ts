@@ -432,6 +432,30 @@ export const sfx = {
     }
     noise(out, dur * 0.8, 1800, 900, 0.05, 'bandpass', 0.15)
   },
+  /** patiënt slaat door: een rauwe, schelle kreet */
+  shriek: sound(0.9, (o) => {
+    tone(o, 'sawtooth', 620, 380, 0.7, 0.16)
+    tone(o, 'sawtooth', 930, 520, 0.6, 0.07, 0.03)
+    noise(o, 0.7, 2600, 1200, 0.18, 'bandpass')
+  }),
+  /** vijandige patiënt: diep, nat gekreun */
+  groan: sound(0.7, (o) => {
+    const f = 85 + Math.random() * 40
+    tone(o, 'sawtooth', f, f * 0.75, 1.1, 0.16)
+    tone(o, 'square', f * 1.5, f * 1.1, 0.9, 0.04, 0.05)
+    noise(o, 1.0, 700, 250, 0.16, 'bandpass')
+  }),
+  /** bange patiënt: hoog gejammer */
+  whimper: sound(0.6, (o) => {
+    tone(o, 'triangle', 520, 430, 0.35, 0.12)
+    tone(o, 'triangle', 560, 410, 0.4, 0.1, 0.4)
+    noise(o, 0.8, 2000, 1500, 0.05, 'bandpass')
+  }),
+  /** laatste zucht */
+  npcDeath: sound(0.8, (o) => {
+    tone(o, 'sawtooth', 240, 70, 0.9, 0.16)
+    noise(o, 0.6, 900, 150, 0.2, 'lowpass', 0.1)
+  }),
   pain: sound(0.7, (o) => tone(o, 'sawtooth', 320, 140, 0.18, 0.25)),
   death: sound(0.9, (o) => {
     tone(o, 'sawtooth', 300, 40, 0.7, 0.3)

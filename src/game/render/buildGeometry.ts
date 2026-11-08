@@ -9,6 +9,7 @@ interface Bucket {
   pos: number[]
   uv: number[]
   col: number[]
+  nrm: number[]
   idx: number[]
 }
 
@@ -26,7 +27,7 @@ export function buildLevelGeometry(level: Level, lighting: Lighting): Map<Textur
   const buckets = new Map<TextureName, Bucket>()
   const bucket = (name: TextureName) => {
     let b = buckets.get(name)
-    if (!b) buckets.set(name, (b = { pos: [], uv: [], col: [], idx: [] }))
+    if (!b) buckets.set(name, (b = { pos: [], uv: [], col: [], nrm: [], idx: [] }))
     return b
   }
   const color: RGB = [0, 0, 0]
@@ -79,6 +80,7 @@ export function buildLevelGeometry(level: Level, lighting: Lighting): Map<Textur
       b.uv.push(uvs[i][0], uvs[i][1])
       lighting.sample(p[0] + normal[0] * 0.05, p[1] + normal[1] * 0.05, p[2] + normal[2] * 0.05, normal, color)
       b.col.push(color[0], color[1], color[2])
+      b.nrm.push(normal[0], normal[1], normal[2])
     })
     b.idx.push(base, base + 1, base + 2, base, base + 2, base + 3)
   }
@@ -164,7 +166,11 @@ export function buildLevelGeometry(level: Level, lighting: Lighting): Map<Textur
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3))
     g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2))
-    g.setAttribute('color', new THREE.Float32BufferAttribute(b.col, 3))
+    const col = new THREE.Float32BufferAttribute(b.col, 3)
+    g.setAttribute('color', col)
+    // dezelfde gebakken belichting, voor de realistische materialen (zie bakedMaterial.ts)
+    g.setAttribute('bake', col)
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(b.nrm, 3))
     g.setIndex(b.idx)
     g.computeBoundingSphere()
     out.set(name, g)

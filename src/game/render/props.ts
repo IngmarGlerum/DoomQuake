@@ -314,7 +314,7 @@ function tube(b: Builder, p: Extract<Prop, { points: unknown }>) {
   }
 }
 
-/** Voeg geometrieën met dezelfde attributen samen tot één buffer. */
+/** Voeg geometrieën met dezelfde attributen samen tot één buffer (normalen gaan mee als iedereen ze heeft). */
 function mergeGeometries(geos: THREE.BufferGeometry[], withUv: boolean): THREE.BufferGeometry | null {
   if (!geos.length) return null
   const flat = geos.map((g) => (g.index ? g.toNonIndexed() : g))
@@ -322,23 +322,27 @@ function mergeGeometries(geos: THREE.BufferGeometry[], withUv: boolean): THREE.B
   const pos = new Float32Array(total * 3)
   const col = withUv ? null : new Float32Array(total * 3)
   const uv = withUv ? new Float32Array(total * 2) : null
+  const withNormals = flat.every((g) => g.getAttribute('normal'))
+  const nrm = withNormals ? new Float32Array(total * 3) : null
   let o = 0
   for (const g of flat) {
     const n = g.getAttribute('position').count
     pos.set(g.getAttribute('position').array as Float32Array, o * 3)
     if (col) col.set(g.getAttribute('color').array as Float32Array, o * 3)
     if (uv) uv.set(g.getAttribute('uv').array as Float32Array, o * 2)
+    if (nrm) nrm.set(g.getAttribute('normal').array as Float32Array, o * 3)
     o += n
   }
   const out = new THREE.BufferGeometry()
   out.setAttribute('position', new THREE.BufferAttribute(pos, 3))
   if (col) out.setAttribute('color', new THREE.BufferAttribute(col, 3))
   if (uv) out.setAttribute('uv', new THREE.BufferAttribute(uv, 2))
+  if (nrm) out.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
   out.computeBoundingSphere()
   return out
 }
 
-export function buildProps(level: Level, lighting: Lighting): PropBuild {
+export function buildProps(level: Level, lighting: Lighting, realistic = false): PropBuild {
   const b = new Builder()
   const rng = makeRng(`props:${level.seed}`)
   const ceilAt = (x: number, z: number) => {
@@ -362,16 +366,20 @@ export function buildProps(level: Level, lighting: Lighting): PropBuild {
     else asylumProp(b, rng, p)
   }
 
-  // ingebakken belichting op de vertexkleuren (zelfde licht als de muren)
+  // ingebakken belichting (zelfde licht als de muren): retro in de vertexkleuren,
+  // realistisch als apart attribuut naast de kleur (zie bakedMaterial.ts)
   const solid = mergeGeometries(b.solid, false)
   if (solid) {
     const pos = solid.getAttribute('position')
     const col = solid.getAttribute('color')
+    const bake = realistic ? new Float32Array(pos.count * 3) : null
     const light: RGB = [0, 0, 0]
     for (let i = 0; i < pos.count; i++) {
       lighting.sample(pos.getX(i), pos.getY(i), pos.getZ(i), undefined, light)
-      col.setXYZ(i, col.getX(i) * (light[0] + 0.06), col.getY(i) * (light[1] + 0.06), col.getZ(i) * (light[2] + 0.06))
+      if (bake) bake.set([light[0] + 0.06, light[1] + 0.06, light[2] + 0.06], i * 3)
+      else col.setXYZ(i, col.getX(i) * (light[0] + 0.06), col.getY(i) * (light[1] + 0.06), col.getZ(i) * (light[2] + 0.06))
     }
+    if (bake) solid.setAttribute('bake', new THREE.BufferAttribute(bake, 3))
   }
 
   return {

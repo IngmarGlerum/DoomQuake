@@ -14,10 +14,22 @@ export const runtime = {
   /** collider-handle → vijand */
   enemyByCollider: new Map<number, EnemyState>(),
   doorsOpen: false,
-  /** colliders waar kogels en projectielen doorheen gaan (patiënten): de speler botst er wel tegen */
+  /** colliders waar kogels en projectielen doorheen gaan; de speler botst er wel tegen */
   passThrough: new Set<number>(),
+  /** raakbare personages die geen vijand zijn (patiënten) */
+  npcs: new Set<NpcTarget>(),
+  npcByCollider: new Map<number, NpcTarget>(),
   /** laatste schot van de speler; vijanden binnen gehoorsafstand worden wakker */
   lastShot: { x: 0, z: 0, time: -1e9 },
+}
+
+/** Iets dat schade kan krijgen zonder een vijand uit enemies/ te zijn (bijv. een patiënt). */
+export interface NpcTarget {
+  pos: THREE.Vector3
+  radius: number
+  height: number
+  alive: () => boolean
+  hurt: (amount: number, point: THREE.Vector3, dir: THREE.Vector3) => void
 }
 
 export interface RayHit {
@@ -26,6 +38,7 @@ export interface RayHit {
   distance: number
   collider: Collider
   enemy?: EnemyState
+  npc?: NpcTarget
 }
 
 /**
@@ -43,7 +56,7 @@ export function raycast(
   const ray = new rapier.Ray(origin, dir)
   const exclude = opts.ignorePlayer === false ? undefined : (runtime.playerCollider ?? undefined)
   const predicate = opts.ignoreEnemies
-    ? (c: Collider) => !runtime.enemyByCollider.has(c.handle) && !runtime.passThrough.has(c.handle)
+    ? (c: Collider) => !runtime.enemyByCollider.has(c.handle) && !runtime.passThrough.has(c.handle) && !runtime.npcByCollider.has(c.handle)
     : (c: Collider) => {
         if (runtime.passThrough.has(c.handle)) return false
         const e = runtime.enemyByCollider.get(c.handle)
@@ -57,5 +70,6 @@ export function raycast(
     distance: hit.timeOfImpact,
     collider: hit.collider,
     enemy: runtime.enemyByCollider.get(hit.collider.handle),
+    npc: runtime.npcByCollider.get(hit.collider.handle),
   }
 }

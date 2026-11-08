@@ -25,6 +25,9 @@ import { TouchControls } from './ui/TouchControls'
 import { isTouchDevice } from './game/player/input'
 import { toggleFullscreen } from './game/fullscreen'
 import { Patients } from './game/npcs/Patients'
+import { AsylumLights } from './game/render/AsylumLights'
+import { PostFX } from './game/render/PostFX'
+import { fxSettings } from './game/combat/Effects'
 import { setAsylumAmbience } from './game/audio'
 
 /** Interne renderhoogte in pixels; het beeld wordt pixelig opgeschaald. */
@@ -48,6 +51,10 @@ export default function App() {
   const level = useMemo(() => LEVELS[levelKind].generate(seed), [levelKind, seed])
   const lighting = useMemo(() => createLighting(level), [level])
   const dpr = useRetroDpr()
+  // het gesticht is niet retro: volle resolutie (op telefoons iets lager, voor de snelheid)
+  const realistic = levelKind === 'asylum'
+  const hdDpr = Math.min(window.devicePixelRatio || 1, isTouchDevice ? 1 : 1.5)
+  fxSettings.particleScale = realistic ? 0.4 : 1
 
   // sfeergeluid in het gesticht, alleen tijdens het spelen
   useEffect(() => {
@@ -79,16 +86,28 @@ export default function App() {
     <>
       <Canvas
         key={`${levelKind}-${seed}-${run}`}
-        className="game"
-        dpr={dpr}
+        className={realistic ? 'game hd' : 'game'}
+        dpr={realistic ? hdDpr : dpr}
+        shadows={realistic}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
-        camera={{ fov: 80, near: 0.05, far: 150 }}
+        camera={{ fov: realistic ? 75 : 80, near: 0.05, far: 150 }}
       >
         <color attach="background" args={['#000000']} />
-        <fog attach="fog" args={['#000000', 18, 75]} />
-        {/* alleen voor de geanimeerde wezens (standard materials); de wereld is vooraf belicht */}
-        <hemisphereLight args={['#c8c0b8', '#201810', 1.1]} />
-        <directionalLight position={[0.4, 1, 0.3]} intensity={1.5} />
+        {realistic ? (
+          <>
+            {/* gesticht: realistisch belicht, met een zaklamp, nevel en nabewerking */}
+            <fogExp2 attach="fog" args={['#05080a', 0.05]} />
+            <AsylumLights level={level} />
+            <PostFX />
+          </>
+        ) : (
+          <>
+            <fog attach="fog" args={['#000000', 18, 75]} />
+            {/* alleen voor de geanimeerde wezens (standard materials); de wereld is vooraf belicht */}
+            <hemisphereLight args={['#c8c0b8', '#201810', 1.1]} />
+            <directionalLight position={[0.4, 1, 0.3]} intensity={1.5} />
+          </>
+        )}
         <Suspense fallback={null}>
           <Physics gravity={[0, 0, 0]}>
             <LevelMesh level={level} lighting={lighting} />

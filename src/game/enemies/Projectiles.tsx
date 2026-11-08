@@ -157,7 +157,9 @@ function updateRocket(p: Projectile, step: number, dir: THREE.Vector3) {
   if (hit) {
     p.active = false
     if (hit.enemy) damageEnemy(hit.enemy, p.damage, hit.point, dir)
-    explodeWithSplash(hit.point.addScaledVector(hit.enemy ? dir : hit.normal, hit.enemy ? -0.3 : 0.25), ROCKET_EXPLOSION)
+    else if (hit.npc) hit.npc.hurt(p.damage, hit.point, dir)
+    const body = hit.enemy || hit.npc
+    explodeWithSplash(hit.point.addScaledVector(body ? dir : hit.normal, body ? -0.3 : 0.25), ROCKET_EXPLOSION)
     return
   }
   p.pos.addScaledVector(dir, step)

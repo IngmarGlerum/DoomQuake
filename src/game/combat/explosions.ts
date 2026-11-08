@@ -50,6 +50,18 @@ export function explode(point: THREE.Vector3, opts: ExplosionOptions) {
     damageEnemy(e, amount, tmpCenter.clone().addScaledVector(dir, -e.def.radius), dir)
   }
 
+  // patiënten en andere raakbare personages
+  for (const n of [...runtime.npcs]) {
+    if (!n.alive()) continue
+    tmpCenter.set(n.pos.x, n.pos.y + n.height / 2, n.pos.z)
+    const dist = Math.max(0, tmpCenter.distanceTo(point) - n.radius)
+    if (dist >= opts.radius || !exposed(point, tmpCenter, dist)) continue
+    const amount = Math.round(opts.damage * (1 - dist / opts.radius))
+    if (amount <= 0) continue
+    const dir = tmpCenter.clone().sub(point).normalize()
+    n.hurt(amount, tmpCenter.clone().addScaledVector(dir, -n.radius), dir)
+  }
+
   // speler
   tmpCenter.set(player.position.x, player.position.y + 0.9, player.position.z)
   const dist = Math.max(0, tmpCenter.distanceTo(point) - 0.4)
