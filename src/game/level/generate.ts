@@ -20,7 +20,10 @@ export interface GenOptions {
   maxRooms?: number
 }
 
-const THEME_LIGHT: Record<Theme, [number, number, number]> = {
+/** thema's die dit level (en de grot) gebruiken */
+type ClassicTheme = Exclude<Theme, 'asylum' | 'padded' | 'oldward' | 'atrium'>
+
+const THEME_LIGHT: Record<ClassicTheme, [number, number, number]> = {
   tech: [0.8, 0.88, 1.0],
   brick: [1.0, 0.82, 0.55],
   hell: [1.0, 0.42, 0.28],
@@ -28,7 +31,7 @@ const THEME_LIGHT: Record<Theme, [number, number, number]> = {
   base: [0.75, 0.85, 1.0],
 }
 
-const THEME_ENEMIES: Record<Theme, EnemyKind[]> = {
+const THEME_ENEMIES: Record<ClassicTheme, EnemyKind[]> = {
   tech: ['grunt', 'grunt', 'grunt', 'imp'],
   brick: ['grunt', 'imp', 'imp'],
   hell: ['imp', 'demon', 'demon'],
@@ -265,7 +268,7 @@ function tryGenerate(seed: string, rng: Rng, opts: GenOptions): Level | null {
       const c = at(px, py)
       if (i % 6 === 3 && c.corridor === e) {
         const wc = cellCenter(px + 0.5, py + 0.5)
-        const [r, g, b] = THEME_LIGHT[theme]
+        const [r, g, b] = THEME_LIGHT[theme as ClassicTheme]
         lights.push({ x: wc.x, y: c.ceil - 0.4, z: wc.z, radius: 9, color: [r * 0.75, g * 0.75, b * 0.75] })
       }
     })
@@ -313,7 +316,7 @@ function tryGenerate(seed: string, rng: Rng, opts: GenOptions): Level | null {
 
   // 6. Lampen per kamer
   for (const r of rooms) {
-    const [cr, cg, cb] = THEME_LIGHT[r.theme]
+    const [cr, cg, cb] = THEME_LIGHT[r.theme as ClassicTheme]
     const radius = Math.max(r.w, r.h) * CELL * 0.75 + 5
     const spots: [number, number][] =
       r.w * r.h >= 40
@@ -380,7 +383,7 @@ function tryGenerate(seed: string, rng: Rng, opts: GenOptions): Level | null {
     const enemies = Math.max(1, Math.min(6, Math.round((r.w * r.h) / 14) + Math.floor(r.depth / 2)))
     for (let i = 0; i < enemies && spots.length; i++) {
       const [x, y] = spots.pop()!
-      place('enemy', x, y, { enemy: rng.pick(THEME_ENEMIES[r.theme]) })
+      place('enemy', x, y, { enemy: rng.pick(THEME_ENEMIES[r.theme as ClassicTheme]) })
     }
   }
   for (const r of rooms) {

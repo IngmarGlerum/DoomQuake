@@ -260,6 +260,132 @@ const terminalScreen: Painter = (px, rng) => {
   }
 }
 
+
+// ---------- gesticht ----------
+
+/** Geglazuurde wandtegels met grijze voegen, iets vergeeld en vlekkerig. */
+const glazedTiles =
+  (base: RGB, grout: RGB, tile = 8): Painter =>
+  (px, rng) => {
+    const n = valueNoise(rng, 8)
+    const stain = valueNoise(rng, 4)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const lx = x % tile
+        const ly = y % tile
+        const t = 0.94 + ((Math.floor(x / tile) * 7 + Math.floor(y / tile) * 13) % 5) * 0.025
+        let c = shade(base, t * (0.92 + n(x, y) * 0.1 + rng.next() * 0.04))
+        // glans: lichte bovenrand van elke tegel
+        if (ly === 1 && lx > 1 && lx < tile - 1) c = shade(c, 1.08)
+        if (lx === 0 || ly === 0) c = shade(grout, 0.9 + rng.next() * 0.15)
+        // vergeelde, vuile vlekken
+        const s = stain(x, y)
+        if (s > 0.68) c = [c[0] * 0.92, c[1] * 0.9, c[2] * 0.78]
+        px(x, y, c)
+      }
+    }
+  }
+
+/** Grote vloertegels, grijsgroen, met barstjes en vuil in de voegen. */
+const floorTiles =
+  (base: RGB, tile = 16): Painter =>
+  (px, rng) => {
+    const n = valueNoise(rng, 8)
+    const crack = valueNoise(rng, 16)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const lx = x % tile
+        const ly = y % tile
+        let c = shade(base, 0.85 + n(x, y) * 0.22 + rng.next() * 0.05)
+        if (lx === 0 || ly === 0) c = shade(base, 0.42)
+        else if (lx === 1 || ly === 1) c = shade(base, 1.12)
+        if (Math.abs(crack(x, y) - 0.5) < 0.012) c = shade(base, 0.5)
+        px(x, y, c)
+      }
+    }
+  }
+
+/** Gecapitonneerde wand (isoleercel): bolle kussens met naden en knoopjes op de kruispunten. */
+const padded =
+  (base: RGB, cell = 16): Painter =>
+  (px, rng) => {
+    const n = valueNoise(rng, 8)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const lx = (x % cell) / cell - 0.5
+        const ly = (y % cell) / cell - 0.5
+        // bol kussen: licht van linksboven
+        const bulge = 1 - (lx * lx + ly * ly) * 2.2
+        const light = 0.78 + bulge * 0.22 - (lx + ly) * 0.18
+        let c = shade(base, light * (0.96 + n(x, y) * 0.06 + rng.next() * 0.02))
+        const seam = x % cell === 0 || y % cell === 0
+        if (seam) c = shade(base, 0.55)
+        if (x % cell === 0 && y % cell === 0) c = shade(base, 0.35)
+        px(x, y, c)
+      }
+    }
+  }
+
+/** Gewit pleisterwerk met vochtplekken en een donkere plint (oude afdeling). */
+const plaster =
+  (base: RGB): Painter =>
+  (px, rng) => {
+    const big = valueNoise(rng, 4)
+    const fine = valueNoise(rng, 16)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const v = big(x, y)
+        let c = shade(base, 0.88 + fine(x, y) * 0.1 + rng.next() * 0.04)
+        if (v > 0.64) c = [c[0] * 0.93, c[1] * 0.92, c[2] * 0.88]
+        if (v > 0.74) c = [c[0] * 0.92, c[1] * 0.91, c[2] * 0.87]
+        // afbladderende verf
+        if (Math.abs(fine(x, y) - 0.5) < 0.015 && v > 0.55) c = shade(base, 0.6)
+        px(x, y, c)
+      }
+    }
+  }
+
+/** Donkere houten vloerdelen. */
+const planks =
+  (base: RGB): Painter =>
+  (px, rng) => {
+    const n = valueNoise(rng, 16)
+    const tint = new Map<string, number>()
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const row = Math.floor(x / 8)
+        const off = (row * 23) % 64
+        const seg = Math.floor((y + off) / 32)
+        const key = `${row},${seg}`
+        if (!tint.has(key)) tint.set(key, 0.8 + rng.next() * 0.3)
+        const grain = 0.85 + Math.sin(y * 0.9 + row * 3 + n(x, y) * 6) * 0.06 + rng.next() * 0.05
+        let c = shade(base, tint.get(key)! * grain)
+        if (x % 8 === 0 || (y + off) % 32 === 0) c = shade(base, 0.4)
+        px(x, y, c)
+      }
+    }
+  }
+
+/** Zeshoekig rooster (loopbrug), zoals een ruitvormig traanplaatrooster. */
+const hexGrate =
+  (base: RGB): Painter =>
+  (px, rng) => {
+    const n = valueNoise(rng, 8)
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        // rijen van 8 px, om de rij een halve cel verspringen
+        const row = Math.floor(y / 7)
+        const lx = (x + (row % 2) * 4) % 8
+        const ly = y % 7
+        const dx = Math.abs(lx - 3.5)
+        const hole = dx + Math.abs(ly - 3) * 0.75 < 2.8
+        let c = hole ? shade(base, 0.12 + rng.next() * 0.04) : shade(base, 0.95 + n(x, y) * 0.25)
+        if (!hole && ly === 0) c = shade(base, 1.3)
+        px(x, y, c)
+      }
+    }
+  }
+
 export type TextureName =
   | 'tech_wall'
   | 'tech_floor'
@@ -276,6 +402,18 @@ export type TextureName =
   | 'base_wall'
   | 'base_floor'
   | 'base_ceil'
+  | 'asylum_wall'
+  | 'asylum_floor'
+  | 'asylum_ceil'
+  | 'padded_wall'
+  | 'padded_floor'
+  | 'padded_ceil'
+  | 'oldward_wall'
+  | 'oldward_floor'
+  | 'oldward_ceil'
+  | 'atrium_wall'
+  | 'atrium_floor'
+  | 'atrium_ceil'
   | 'hazard'
   | 'slidedoor'
   | 'screen'
@@ -300,6 +438,18 @@ const PAINTERS: Record<TextureName, Painter> = {
   base_wall: panels(hex(0x4c535c), hex(0xc8a020)),
   base_floor: grating(hex(0x5a6068)),
   base_ceil: panels(hex(0x34383e), hex(0x58606c), 32),
+  asylum_wall: glazedTiles(hex(0xd6dcd8), hex(0x8a948f)),
+  asylum_floor: floorTiles(hex(0x7f8f88)),
+  asylum_ceil: tiles(hex(0xb8c0bc), 32),
+  padded_wall: padded(hex(0xe2e0d8)),
+  padded_floor: floorTiles(hex(0xc8ccc8), 32),
+  padded_ceil: padded(hex(0xd4d2ca), 32),
+  oldward_wall: plaster(hex(0xd8d4c8)),
+  oldward_floor: planks(hex(0x4a3628)),
+  oldward_ceil: plaster(hex(0xc8c4b8)),
+  atrium_wall: glazedTiles(hex(0xc4ccc8), hex(0x7a8480), 16),
+  atrium_floor: hexGrate(hex(0x9aa2a6)),
+  atrium_ceil: panels(hex(0x7c8480), hex(0x9ac8c8), 32),
   hazard,
   slidedoor: slideDoor,
   screen: terminalScreen,

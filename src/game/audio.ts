@@ -397,6 +397,41 @@ export const sfx = {
     tone(o, 'sine', 70, 35, 0.2, 0.6)
     noise(o, 0.12, 400, 80, 0.35)
   }),
+  /** patiënt: zacht, toonloos geneurie met een ademende fluistering */
+  murmur: (pos?: Pos) => {
+    const out = output(pos, 0.5, 0.5)
+    if (!out) return
+    const ac = audio()
+    const t = ac.currentTime
+    const f = 130 + Math.random() * 70
+    const dur = 1.4 + Math.random() * 1.2
+    // twee iets ontstemde stemmen met een trage vibrato
+    for (const detune of [0, 1.012]) {
+      const osc = ac.createOscillator()
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(f * (detune || 1), t)
+      osc.frequency.linearRampToValueAtTime(f * (detune || 1) * (0.86 + Math.random() * 0.1), t + dur)
+      const vib = ac.createOscillator()
+      vib.frequency.value = 4 + Math.random() * 2
+      const vibGain = ac.createGain()
+      vibGain.gain.value = f * 0.02
+      vib.connect(vibGain).connect(osc.frequency)
+      const formant = ac.createBiquadFilter()
+      formant.type = 'bandpass'
+      formant.frequency.value = 500 + Math.random() * 300
+      formant.Q.value = 3
+      const g = ac.createGain()
+      g.gain.setValueAtTime(0.0001, t)
+      g.gain.exponentialRampToValueAtTime(0.18, t + 0.3)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+      osc.connect(formant).connect(g).connect(out)
+      osc.start(t)
+      vib.start(t)
+      osc.stop(t + dur)
+      vib.stop(t + dur)
+    }
+    noise(out, dur * 0.8, 1800, 900, 0.05, 'bandpass', 0.15)
+  },
   pain: sound(0.7, (o) => tone(o, 'sawtooth', 320, 140, 0.18, 0.25)),
   death: sound(0.9, (o) => {
     tone(o, 'sawtooth', 300, 40, 0.7, 0.3)
@@ -435,4 +470,110 @@ export const sfx = {
   }),
   jump: sound(1, (o) => tone(o, 'triangle', 200, 320, 0.08, 0.05)),
   exit: sound(1, (o) => [392, 523, 659, 784, 1046].forEach((f, i) => tone(o, 'square', f, f, 0.18, 0.12, i * 0.1))),
+}
+
+// ---------- sfeergeluid (gesticht) ----------
+
+let ambience: { stop: () => void } | null = null
+
+/**
+ * Doorlopende sfeer: een lage, zwevende drone, het gezoem van tl-buizen en af en toe
+ * een verre kreun of kreet die door de gangen galmt. `false` zet hem uit.
+ */
+export function setAsylumAmbience(on: boolean) {
+  if (!on) {
+    ambience?.stop()
+    ambience = null
+    return
+  }
+  if (ambience) return
+  const ac = audio()
+  const bus = ac.createGain()
+  bus.gain.setValueAtTime(0.0001, ac.currentTime)
+  bus.gain.exponentialRampToValueAtTime(1, ac.currentTime + 3)
+  bus.connect(master!)
+  const nodes: AudioScheduledSourceNode[] = []
+  const osc = (type: OscillatorType, freq: number, gain: number, target: AudioNode) => {
+    const o = ac.createOscillator()
+    o.type = type
+    o.frequency.value = freq
+    const g = ac.createGain()
+    g.gain.value = gain
+    o.connect(g).connect(target)
+    o.start()
+    nodes.push(o)
+    return o
+  }
+  // drone: twee zwevende zaagtanden door een donker filter dat langzaam ademt
+  const lp = ac.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 160
+  lp.connect(bus)
+  osc('sawtooth', 49, 0.05, lp)
+  osc('sawtooth', 49.35, 0.05, lp)
+  osc('sine', 73.4, 0.03, lp)
+  const lfo = osc('sine', 0.07, 0, bus)
+  const lfoGain = ac.createGain()
+  lfoGain.gain.value = 70
+  lfo.disconnect()
+  lfo.connect(lfoGain).connect(lp.frequency)
+  // tl-gezoem (netbrom)
+  osc('sine', 100, 0.006, bus)
+  osc('sine', 200, 0.0035, bus)
+  osc('square', 50, 0.0012, bus)
+
+  // verre kreten en gekreun, met veel galm
+  let timer = 0
+  const cry = () => {
+    const t = ac.currentTime
+    const dry = ac.createGain()
+    dry.gain.value = 0.25
+    dry.connect(bus)
+    const wet = ac.createGain()
+    wet.gain.value = 1.4
+    wet.connect(room())
+    const v = ac.createOscillator()
+    v.type = 'sawtooth'
+    const scream = Math.random() < 0.3
+    const f = scream ? 520 + Math.random() * 200 : 160 + Math.random() * 90
+    const dur = scream ? 1.0 + Math.random() * 0.6 : 2 + Math.random() * 1.5
+    v.frequency.setValueAtTime(f, t)
+    v.frequency.linearRampToValueAtTime(f * (scream ? 0.7 : 0.8), t + dur)
+    const vib = ac.createOscillator()
+    vib.frequency.value = scream ? 7 : 5
+    const vg = ac.createGain()
+    vg.gain.value = f * 0.025
+    vib.connect(vg).connect(v.frequency)
+    const formant = ac.createBiquadFilter()
+    formant.type = 'bandpass'
+    formant.frequency.value = scream ? 1300 : 650
+    formant.Q.value = 5
+    const muffle = ac.createBiquadFilter()
+    muffle.type = 'lowpass'
+    muffle.frequency.value = 1400
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(scream ? 0.09 : 0.07, t + 0.25)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+    v.connect(formant).connect(muffle).connect(g)
+    g.connect(dry)
+    g.connect(wet)
+    v.start(t)
+    vib.start(t)
+    v.stop(t + dur)
+    vib.stop(t + dur)
+    timer = window.setTimeout(cry, 14000 + Math.random() * 22000)
+  }
+  timer = window.setTimeout(cry, 6000 + Math.random() * 8000)
+
+  ambience = {
+    stop: () => {
+      window.clearTimeout(timer)
+      const t = ac.currentTime
+      bus.gain.cancelScheduledValues(t)
+      bus.gain.setValueAtTime(bus.gain.value, t)
+      bus.gain.exponentialRampToValueAtTime(0.0001, t + 0.6)
+      for (const n of nodes) n.stop(t + 0.7)
+    },
+  }
 }

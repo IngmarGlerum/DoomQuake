@@ -51,8 +51,21 @@ Kies in het beginscherm tussen:
   Slingerende tunnels, rotswanden met grillige hoeken, basiskamers met een functie (serverruimte, controlekamer,
   lab met opengewrongen kooien, opslag, reactor), automatische schuifdeuren met een zwart-geel kozijn, pijpen,
   kabels en lampen. Hier wonen alleen de mutant en het klauwbeest (de vijanden uit level 1 komen er niet voor).
+- **Level 3: Gesticht**: een verlaten, griezelig gesticht (`src/game/level/generateAsylum.ts`). Je wordt wakker in
+  een oude cel (ijzeren bed, raam met luiken, po). Koele tegelgangen met cyaan lichtstrips langs de muren en hier en
+  daar een kapotte tl-lamp, zalen met ziekenhuisbedden, kamerschermen en tv's aan het plafond, onderzoekskamers met
+  een tafel met riemen en bloed op de vloer, gecapitonneerde isoleercellen, en een hoge hal met een loopbrug van
+  roosters en relingen boven een diepe schacht, met een hangende cabine. Doorlopend sfeergeluid: een lage drone,
+  het gezoem van tl-buizen en af en toe een verre kreet. Nog zonder vijanden.
+  - **Patiënten** (`src/game/npcs/Patients.tsx`) lopen rond, ijsberen, staan wiegend tegen de muur of staan stil met
+    af en toe een trekking. Kom je dichtbij, dan blijven ze staan, draaien langzaam naar je toe, volgen je met hun
+    hoofd en mompelen. Kogels gaan door ze heen; je botst er wel tegenaan.
+  - Hun bewegingen zijn echte motion capture uit de Mixamo-bibliotheek (Adobe), via het gerigde Xbot-model uit de
+    voorbeelden van three.js (`src/assets/models/patient.glb`): stilstaan en lopen worden gemengd, en houdingen
+    (gebogen, sluipend, hoofdschudden, knikken) worden er additief overheen gelegd. Het ziekenhuishemd en de bleke
+    huid worden in de shader op het model geschilderd.
 
-Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`).
+Via de URL: `?level=caves&seed=abyss-1` (of `level=outpost`, `level=asylum`).
 
 ## Wat er nu is
 

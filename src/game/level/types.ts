@@ -6,7 +6,7 @@ export const STEP = 0.25
 export const MAX_STEP = 0.5
 export const PLAYER_HEIGHT = 1.8
 
-export type Theme = 'tech' | 'brick' | 'hell' | 'cave' | 'base'
+export type Theme = 'tech' | 'brick' | 'hell' | 'cave' | 'base' | 'asylum' | 'padded' | 'oldward' | 'atrium'
 
 export interface Cell {
   solid: boolean
@@ -46,17 +46,54 @@ export interface Room {
   purpose?: RoomPurpose
 }
 
-export type RoomPurpose = 'server' | 'control' | 'lab' | 'storage' | 'reactor'
+export type RoomPurpose =
+  | 'server'
+  | 'control'
+  | 'lab'
+  | 'storage'
+  | 'reactor'
+  // gesticht
+  | 'ward'
+  | 'exam'
+  | 'padded'
+  | 'cell'
+  | 'atrium'
 
 /** Decorstukken in de grotbasis. Posities in wereldcoördinaten; `rot` = draaiing om de y-as (voorkant = +z). */
 export type Prop =
   | {
-      kind: 'rack' | 'terminal' | 'switchboard' | 'cage' | 'crate' | 'lamp'
+      kind:
+        | 'rack'
+        | 'terminal'
+        | 'switchboard'
+        | 'cage'
+        | 'crate'
+        | 'lamp'
+        // gesticht
+        | 'bed'
+        | 'ironbed'
+        | 'screen'
+        | 'monitor'
+        | 'examtable'
+        | 'trolley'
+        | 'cabinet'
+        | 'mattress'
+        | 'pot'
+        | 'window'
+        | 'railing'
+        | 'pod'
+        | 'wheelchair'
+        | 'chair'
+        | 'strip'
+        | 'ceillight'
+        | 'blood'
       x: number
       y: number
       z: number
       rot: number
       variant: number
+      /** lengte (lichtstrip, reling) of grootte (bloed) */
+      len?: number
     }
   | {
       kind: 'pipe' | 'cable'
@@ -65,7 +102,21 @@ export type Prop =
       color: number
     }
 
-export type LevelKind = 'outpost' | 'caves'
+export type LevelKind = 'outpost' | 'caves' | 'asylum'
+
+/** Hoe een patiënt zich gedraagt. */
+export type NpcBehavior = 'wander' | 'pacer' | 'rocker' | 'stander'
+
+/** Rondlopende patiënt (gesticht): geen vijand, wel een collider. */
+export interface Npc {
+  x: number
+  y: number
+  z: number
+  yaw: number
+  cell: number
+  behavior: NpcBehavior
+  variant: number
+}
 
 export type EnemyKind = 'grunt' | 'imp' | 'demon' | 'mutant' | 'clawbeast'
 export type ThingKind = 'enemy' | 'health' | 'ammo' | 'armor' | 'key' | 'exit'
@@ -104,8 +155,10 @@ export interface Level {
   keyRoom: number
   exitRoom: number
   kind?: LevelKind
-  /** decorstukken (alleen in de grotbasis) */
+  /** decorstukken (grotbasis, gesticht) */
   props?: Prop[]
+  /** patiënten (gesticht) */
+  npcs?: Npc[]
   /** hoeveel muurhoeken in grotten willekeurig verschoven worden (meters), voor een rotsachtig effect */
   cornerJitter?: number
 }

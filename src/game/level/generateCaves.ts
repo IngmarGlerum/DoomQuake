@@ -43,7 +43,7 @@ interface Tunnel {
   points: { x: number; y: number; floor: number }[]
 }
 
-const LIGHT: Record<RoomPurpose | 'cave' | 'tunnel' | 'door' | 'alarm', [number, number, number]> = {
+const LIGHT: Record<'server' | 'control' | 'lab' | 'storage' | 'reactor' | 'cave' | 'tunnel' | 'door' | 'alarm', [number, number, number]> = {
   server: [0.5, 0.72, 1.0],
   control: [0.85, 0.92, 1.0],
   lab: [0.5, 1.0, 0.58],
@@ -600,7 +600,7 @@ function decorateBaseRoom(r: Room, cells: Cell[], rng: Rng, props: Prop[], occup
   props.push({ kind: 'cable', points: [[x1, y + 0.1, z0 + 0.2], [x1, y - 0.4, (z0 + z1) / 2], [x1, y + 0.1, z1]], radius: 0.06, color: 0x1a1a1a })
 
   // licht
-  const color = LIGHT[purpose]
+  const color = LIGHT[purpose as keyof typeof LIGHT]
   const spots4: [number, number][] =
     r.w * r.h >= 40
       ? [

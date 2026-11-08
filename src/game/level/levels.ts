@@ -1,4 +1,5 @@
 import { generateLevel } from './generate'
+import { generateAsylumLevel } from './generateAsylum'
 import { generateCaveLevel } from './generateCaves'
 import type { Level, LevelKind } from './types'
 
@@ -23,6 +24,12 @@ export const LEVELS: Record<LevelKind, LevelInfo> = {
     description: 'Kronkelige grotten met een kwaadaardige basis, mutanten en klauwbeesten.',
     generate: (seed) => generateCaveLevel(seed),
   },
+  asylum: {
+    kind: 'asylum',
+    name: 'Gesticht',
+    description: 'Een verlaten gesticht met tegels, isoleercellen en rondlopende patiënten.',
+    generate: (seed) => generateAsylumLevel(seed),
+  },
 }
 
-export const LEVEL_ORDER: LevelKind[] = ['outpost', 'caves']
+export const LEVEL_ORDER: LevelKind[] = ['outpost', 'caves', 'asylum']

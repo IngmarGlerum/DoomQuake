@@ -24,6 +24,8 @@ import { Minimap } from './ui/Minimap'
 import { TouchControls } from './ui/TouchControls'
 import { isTouchDevice } from './game/player/input'
 import { toggleFullscreen } from './game/fullscreen'
+import { Patients } from './game/npcs/Patients'
+import { setAsylumAmbience } from './game/audio'
 
 /** Interne renderhoogte in pixels; het beeld wordt pixelig opgeschaald. */
 const RENDER_HEIGHT = 300
@@ -46,6 +48,17 @@ export default function App() {
   const level = useMemo(() => LEVELS[levelKind].generate(seed), [levelKind, seed])
   const lighting = useMemo(() => createLighting(level), [level])
   const dpr = useRetroDpr()
+
+  // sfeergeluid in het gesticht, alleen tijdens het spelen
+  useEffect(() => {
+    const update = (s: ReturnType<typeof useGame.getState>) => setAsylumAmbience(s.levelKind === 'asylum' && s.locked && s.status === 'playing')
+    update(useGame.getState())
+    const unsub = useGame.subscribe(update)
+    return () => {
+      unsub()
+      setAsylumAmbience(false)
+    }
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -84,6 +97,7 @@ export default function App() {
             <Props level={level} lighting={lighting} />
             <Player level={level} />
             <Enemies level={level} lighting={lighting} />
+            <Patients level={level} lighting={lighting} />
             <Projectiles />
             <Weapon lighting={lighting} />
           </Physics>

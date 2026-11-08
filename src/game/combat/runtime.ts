@@ -14,6 +14,8 @@ export const runtime = {
   /** collider-handle → vijand */
   enemyByCollider: new Map<number, EnemyState>(),
   doorsOpen: false,
+  /** colliders waar kogels en projectielen doorheen gaan (patiënten): de speler botst er wel tegen */
+  passThrough: new Set<number>(),
   /** laatste schot van de speler; vijanden binnen gehoorsafstand worden wakker */
   lastShot: { x: 0, z: 0, time: -1e9 },
 }
@@ -41,8 +43,9 @@ export function raycast(
   const ray = new rapier.Ray(origin, dir)
   const exclude = opts.ignorePlayer === false ? undefined : (runtime.playerCollider ?? undefined)
   const predicate = opts.ignoreEnemies
-    ? (c: Collider) => !runtime.enemyByCollider.has(c.handle)
+    ? (c: Collider) => !runtime.enemyByCollider.has(c.handle) && !runtime.passThrough.has(c.handle)
     : (c: Collider) => {
+        if (runtime.passThrough.has(c.handle)) return false
         const e = runtime.enemyByCollider.get(c.handle)
         return !e || e.state !== 'dead'
       }

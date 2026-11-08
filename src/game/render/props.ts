@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { makeRng, type Rng } from '../rng'
 import { CELL, type Level, type Prop } from '../level/types'
 import type { Lighting, RGB } from './lighting'
+import { asylumProp } from './asylumProps'
 import { shaded } from './models'
 
 /**
@@ -40,7 +41,7 @@ type V3 = [number, number, number]
 
 const LED_COLORS = [0x30ff60, 0x30ff60, 0x30ff60, 0xffb020, 0x40a0ff, 0xff3020]
 
-class Builder {
+export class Builder {
   solid: THREE.BufferGeometry[] = []
   glow: THREE.BufferGeometry[] = []
   screens: THREE.BufferGeometry[] = []
@@ -70,6 +71,11 @@ class Builder {
     this.solid.push(this.place(shaded(new THREE.BoxGeometry(w, h, d), color), pos, rot))
   }
 
+  /** Willekeurige geometrie met een vaste kleur (wordt gearceerd en belicht zoals de rest). */
+  geo(g: THREE.BufferGeometry, color: number, pos: V3, rot?: V3) {
+    this.solid.push(this.place(shaded(g, color), pos, rot))
+  }
+
   cyl(r: number, h: number, color: number, pos: V3, rot?: V3, segments = 8) {
     this.solid.push(this.place(shaded(new THREE.CylinderGeometry(r, r, h, segments), color), pos, rot))
   }
@@ -86,13 +92,13 @@ class Builder {
     this.solid.push(this.place(shaded(g, color), [0, 0, 0]))
   }
 
-  glowBox(w: number, h: number, d: number, color: THREE.Color, pos: V3) {
+  glowBox(w: number, h: number, d: number, color: THREE.Color, pos: V3, rot?: V3) {
     const g = new THREE.BoxGeometry(w, h, d).toNonIndexed()
     const n = g.getAttribute('position').count
     const col = new Float32Array(n * 3)
     for (let i = 0; i < n; i++) col.set([color.r, color.g, color.b], i * 3)
     g.setAttribute('color', new THREE.BufferAttribute(col, 3))
-    this.glow.push(this.place(g, pos))
+    this.glow.push(this.place(g, pos, rot))
   }
 
   /** Scherm (vlak, kijkt naar lokaal +z) met een eigen stukje van de terminaltextuur. */
@@ -353,6 +359,7 @@ export function buildProps(level: Level, lighting: Lighting): PropBuild {
     else if (p.kind === 'cage') cage(b, rng)
     else if (p.kind === 'crate') crate(b, rng, p.variant)
     else if (p.kind === 'lamp') lamp(b)
+    else asylumProp(b, rng, p)
   }
 
   // ingebakken belichting op de vertexkleuren (zelfde licht als de muren)

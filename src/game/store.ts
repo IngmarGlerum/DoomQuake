@@ -12,7 +12,7 @@ export type DropKind = 'stimpack' | 'clip' | 'shells' | 'rocket' | 'disks'
 
 interface GameState {
   seed: string
-  /** welk level (buitenpost of grotbasis) */
+  /** welk level (buitenpost, grotbasis of gesticht) */
   levelKind: LevelKind
   /** verhoogd bij elke (her)start, zodat de scene opnieuw mount */
   run: number
@@ -58,7 +58,8 @@ interface GameState {
 
 const params = new URLSearchParams(window.location.search)
 const initialSeed = params.get('seed') || randomSeed()
-const initialKind: LevelKind = params.get('level') === 'caves' ? 'caves' : 'outpost'
+const KINDS: LevelKind[] = ['outpost', 'caves', 'asylum']
+const initialKind: LevelKind = KINDS.find((k) => k === params.get('level')) ?? 'outpost'
 
 function writeUrl(seed: string, kind: LevelKind) {
   const url = new URL(window.location.href)
