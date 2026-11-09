@@ -63,12 +63,20 @@ Kies in het beginscherm tussen:
   zalen met ziekenhuisbedden, kamerschermen en tv's aan het plafond, onderzoekskamers met een tafel met riemen en
   bloed, isoleercellen, en een hoge hal met een loopbrug van roosters en relingen boven een schacht. Sfeergeluid:
   een lage drone, tl-gezoem en af en toe een verre kreet.
-  - **Patiënten** (`src/game/npcs/Patients.tsx`): echte, gerigde personages (Michelle uit Mixamo en een
-    Ready Player Me-avatar, via de voorbeelden van three.js) in een lang patiëntenhemd of een dwangbuis met
-    gekruiste armen, soms met bloed. Ze bewegen met motion capture uit de Mixamo-bibliotheek (van het Xbot-skelet
-    naar hun eigen skelet geretarget, `src/game/npcs/retarget.ts`): stilstaan, lopen en rennen, met houdingen
-    (gebogen, sluipend, hoofdschudden, knikken) additief erover. Ze schuifelen rond, ijsberen, wiegen tegen de
-    muur of staan stil; kom je dichtbij, dan draaien ze naar je toe en volgen je met hun hoofd.
+  - **Patiënten** (`src/game/npcs/Patients.tsx`): zombies op basis van een gerigd Ready Player Me-personage
+    (via de voorbeelden van three.js), in een vergeeld hemd of een dwangbuis met gekruiste armen. Het zombie-uiterlijk
+    wordt in de shader geschilderd (`src/game/npcs/patientMaterials.ts`): grauwe, vlekkerige huid met aders en
+    barstjes, ingevallen donkere oogkassen, holle wangen, doffe ogen met bloedvaten, gele tanden, een bebloede mond
+    met bloed over kin en hals, en een paar rottende wonden per patiënt. De onderkaak hangt slap open en maakt af en
+    toe een reeks hongerige happen (de `mouthOpen`-vorm van het model), vaker als ze je zien of aanvallen.
+    Ze bewegen met motion capture uit de Mixamo-bibliotheek (van het Xbot-skelet naar hun eigen skelet geretarget,
+    `src/game/npcs/retarget.ts`): stilstaan, lopen en rennen, met houdingen (gebogen, sluipend, hoofdschudden,
+    knikken) additief erover. Ze schuifelen rond, ijsberen, wiegen tegen de muur of staan stil; kom je dichtbij,
+    dan heffen ze hun hoofd en kijken je recht aan.
+  - **Kogelgaten en bloed**: elke treffer laat een blijvend gat met een doorweekte vlek en een straaltje bloed
+    achter op het lichaam (via het dichtstbijzijnde bot terug naar de bind-pose gerekend). Bloed spuit als druppels
+    en nevel (`src/game/combat/BloodFX.tsx`), spat op de muur erachter en op de vloer, en een gevallen patiënt
+    ligt in een plas bloed.
   - **Val je een patiënt aan**, dan slaat die door: met gestrekte armen schuifelt hij op je af en haalt uit
     (armen via een kleine IK bovenop de motion capture). Wie een dwangbuis draagt of bang is, rent weg. Na genoeg
     schade valt de patiënt achterover neer. Alle wapens (ook raketten en de disk) raken patiënten.

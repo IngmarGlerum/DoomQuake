@@ -28,6 +28,7 @@ import { Patients } from './game/npcs/Patients'
 import { AsylumLights } from './game/render/AsylumLights'
 import { PostFX } from './game/render/PostFX'
 import { fxSettings } from './game/combat/Effects'
+import { BloodFX } from './game/combat/BloodFX'
 import { setAsylumAmbience } from './game/audio'
 
 /** Interne renderhoogte in pixels; het beeld wordt pixelig opgeschaald. */
@@ -55,6 +56,7 @@ export default function App() {
   const realistic = levelKind === 'asylum'
   const hdDpr = Math.min(window.devicePixelRatio || 1, isTouchDevice ? 1 : 1.5)
   fxSettings.particleScale = realistic ? 0.4 : 1
+  fxSettings.realistic = realistic
 
   // sfeergeluid in het gesticht, alleen tijdens het spelen
   useEffect(() => {
@@ -124,6 +126,7 @@ export default function App() {
           <Drops lighting={lighting} />
           <Disks lighting={lighting} />
           <Effects />
+          {realistic && <BloodFX />}
         </Suspense>
         {/* op touchscreens geen pointer lock: daar kijk je door te slepen */}
         {!isTouchDevice && (

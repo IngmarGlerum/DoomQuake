@@ -451,6 +451,12 @@ export const sfx = {
     tone(o, 'triangle', 560, 410, 0.4, 0.1, 0.4)
     noise(o, 0.8, 2000, 1500, 0.05, 'bandpass')
   }),
+  /** tanden die op elkaar klappen, met een natte grauw */
+  chomp: sound(0.7, (o) => {
+    noise(o, 0.05, 3000, 1500, 0.35, 'bandpass')
+    noise(o, 0.05, 3000, 1500, 0.3, 'bandpass', 0.25)
+    tone(o, 'sawtooth', 120, 80, 0.4, 0.07)
+  }),
   /** laatste zucht */
   npcDeath: sound(0.8, (o) => {
     tone(o, 'sawtooth', 240, 70, 0.9, 0.16)

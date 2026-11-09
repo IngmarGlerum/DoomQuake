@@ -60,7 +60,7 @@ export function AsylumLights({ level }: { level: Level }) {
     const s = spot.current
     if (s) {
       // licht nadeinend: de bundel trilt een heel klein beetje mee met lopen
-      s.intensity = flashlight.on ? 8 + Math.sin(clock.elapsedTime * 31) * 0.1 : 0
+      s.intensity = flashlight.on ? 5 + Math.sin(clock.elapsedTime * 31) * 0.06 : 0
       s.castShadow = flashlight.on
     }
     timer.current -= delta
@@ -101,7 +101,7 @@ export function AsylumLights({ level }: { level: Level }) {
       <spotLight
         ref={spot}
         color={0xfff2dc}
-        intensity={8}
+        intensity={5}
         distance={28}
         angle={0.42}
         penumbra={0.55}

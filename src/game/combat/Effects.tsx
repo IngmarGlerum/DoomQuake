@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import { blood } from './BloodFX'
 
 /**
  * Visuele effecten met vaste pools (geen allocaties per schot):
@@ -13,7 +14,7 @@ const MAX_TRACERS = 64
 const MAX_PARTICLES = 700
 
 /** Weergave-instellingen: in het realistische gesticht zijn deeltjes (bloed, vonken) veel fijner. */
-export const fxSettings = { particleScale: 1 }
+export const fxSettings = { particleScale: 1, realistic: false }
 const MAX_DECALS = 160
 const MAX_FLASHES = 48
 
@@ -158,6 +159,8 @@ export const fx = {
 
   /** Kogel raakt vijand: bloedspetters. */
   fleshImpact(pos: THREE.Vector3, dir: THREE.Vector3, amount = 1) {
+    // gesticht: echte bloedspetters, nevel en spatten in plaats van blokjes
+    if (fxSettings.realistic) return blood.spray(pos, dir, amount)
     const back = dir.clone().negate()
     emit(pos, back, Math.round(10 * amount), { speed: [1.5, 5], spread: 0.9, life: [0.3, 0.7], size: [0.07, 0.14], gravity: 12, colors: [[0.7, 0.02, 0.02], [0.45, 0, 0], [0.9, 0.1, 0.05]] })
     emit(pos, dir, Math.round(5 * amount), { speed: [2, 6], spread: 0.5, life: [0.3, 0.6], size: [0.04, 0.08], gravity: 12, colors: [[0.6, 0, 0]] })

@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
-import femaleUrl from '../../assets/models/patient-body.glb?url'
 import maleUrl from '../../assets/models/patient-male.glb?url'
 import mocapUrl from '../../assets/models/mocap-xbot.glb?url'
 import { sfx } from '../audio'
@@ -16,6 +15,8 @@ import type { Lighting, RGB } from '../render/lighting'
 import { player, useGame } from '../store'
 import { findPath, randomReachable, straightRun } from './pathing'
 import { retargetClip } from './retarget'
+import { blood } from '../combat/BloodFX'
+import { paintFor, patientMaterial, patientUniforms, rotSpots, MAX_WOUNDS, type ClothLook, type PatientUniforms } from './patientMaterials'
 
 /**
  * Patiënten in het gesticht.
@@ -73,7 +74,7 @@ const loadAssets = () => (assetsPromise ??= load())
 
 async function load(): Promise<Assets> {
   const loader = new GLTFLoader()
-  const [female, male, mocap] = await Promise.all([loader.loadAsync(femaleUrl), loader.loadAsync(maleUrl), loader.loadAsync(mocapUrl)])
+  const [male, mocap] = await Promise.all([loader.loadAsync(maleUrl), loader.loadAsync(mocapUrl)])
   mocap.scene.updateMatrixWorld(true)
   const hipY = (root: THREE.Object3D, name: string) => root.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()).y
   const sourceHip = hipY(mocap.scene, 'mixamorigHips')
@@ -111,117 +112,12 @@ async function load(): Promise<Assets> {
       },
     }
   }
-  return { bodies: [make(female, 'mixamorig', 'female', false), make(male, '', 'male', true)] }
-}
-
-interface Look {
-  /** kleur van het hemd */
-  cloth: THREE.Color
-  /** dwangbuis: riemen en gekruiste armen */
-  jacket: number
-  /** bloedvlekken */
-  blood: number
-}
-
-/**
- * Eigen licht uit de vooraf berekende belichting op de plek (`tint`, gedeeld per patiënt), zodat
- * ze in de schaduw niet pikzwart zijn; echte lampen en de zaklamp belichten ze daarbovenop.
- */
-const SELF_LIT = 0.35
-
-/** Bestaand materiaal, alleen met het eigen licht erbij (huid, haar, ogen, schoenen). */
-function litMaterial(base: THREE.MeshStandardMaterial, tint: THREE.Color) {
-  const mat = base.clone()
-  mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTint = { value: tint }
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uTint;')
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * uTint * ${SELF_LIT.toFixed(2)};`)
-  }
-  mat.customProgramCacheKey = () => 'patient-lit-v1'
-  return mat
-}
-
-/**
- * Patiëntenkleding: een lang hemd of een dwangbuis met riemen, vuil en soms bloed.
- * `full`: het hele kledingstuk wordt stof (losse kleding van het mannelijke model); anders
- * wordt het hemd op het lichaam geschilderd met de bind-pose-coördinaten (Michelle, T-pose):
- * romp en benen tot net boven de enkels, mouwen tot de pols. Huid en haar blijven onaangetast.
- */
-function clothMaterial(base: THREE.MeshStandardMaterial, look: Look, tint: THREE.Color, seed: number, full: boolean) {
-  const mat = base.clone()
-  // losse kledingstukken: de plooien van het originele pak (revers, naden) niet laten zien
-  if (full) mat.normalMap = null
-  mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uCloth = { value: look.cloth }
-    shader.uniforms.uJacket = { value: look.jacket }
-    shader.uniforms.uBlood = { value: look.blood }
-    shader.uniforms.uSeed = { value: seed }
-    shader.uniforms.uFull = { value: full ? 1 : 0 }
-    shader.uniforms.uTint = { value: tint }
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBind;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBind = position;')
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-varying vec3 vBind;
-uniform vec3 uCloth;
-uniform vec3 uTint;
-uniform float uJacket;
-uniform float uBlood;
-uniform float uSeed;
-uniform float uFull;
-float pHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + uSeed) * 43758.5453); }
-float pNoise(vec2 p) {
-  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(pHash(i), pHash(i + vec2(1, 0)), f.x), mix(pHash(i + vec2(0, 1)), pHash(i + vec2(1, 1)), f.x), f.y);
-}
-float clothMask;`,
-      )
-      .replace(
-        '#include <map_fragment>',
-        `#include <map_fragment>
-{
-  vec3 p = vBind;
-  float ax = abs(p.x);
-  float body = smoothstep(0.27, 0.24, ax) * smoothstep(0.11, 0.14, p.y) * smoothstep(1.43, 1.40, p.y);
-  float sleeve = smoothstep(0.57, 0.54, ax) * smoothstep(1.22, 1.26, p.y) * smoothstep(1.47, 1.43, p.y);
-  clothMask = uFull > 0.5 ? 1.0 : max(body, sleeve);
-  // stof: grove plooien, vuil
-  float folds = 0.88 + 0.12 * pNoise(vec2(p.x * 22.0, p.y * 3.0));
-  float dirt = pNoise(p.xy * 6.0) * 0.2 + pNoise(p.xy * 25.0) * 0.07;
-  vec3 cloth = uCloth * folds * (1.0 - dirt);
-  if (uJacket > 0.5) {
-    // dwangbuis: schuine riemen over borst, buik en dijen, met een gesp
-    float strap = 0.0;
-    for (int i = 0; i < 3; i++) {
-      float y = 1.18 - float(i) * 0.24;
-      strap = max(strap, smoothstep(0.03, 0.02, abs(p.y - y - p.x * 0.18)) * step(ax, 0.3));
-    }
-    float buckle = smoothstep(0.03, 0.02, length(vec2(p.x - 0.12, p.y - 1.2)));
-    cloth = mix(cloth, vec3(0.42, 0.38, 0.31) * folds, strap);
-    cloth = mix(cloth, vec3(0.45), buckle);
-  }
-  // bloed: spetters en vegen naar beneden
-  float splat = smoothstep(0.72, 0.8, pNoise(p.xy * vec2(9.0, 4.0) + 3.0)) * uBlood;
-  float drip = smoothstep(0.82, 0.9, pNoise(vec2(p.x * 40.0, p.y * 1.5))) * uBlood * step(0.6, p.y);
-  cloth = mix(cloth, vec3(0.25, 0.015, 0.015), clamp(splat + drip, 0.0, 1.0) * 0.9);
-  diffuseColor.rgb = mix(diffuseColor.rgb, cloth, clothMask);
-}`,
-      )
-      // Michelles glanskaart werkt als ruwheid omgekeerd (haar en huid glommen als plastic): vaste ruwheid
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(uFull > 0.5 ? roughnessFactor : 0.68, 0.92, clothMask);')
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * uTint * ${SELF_LIT.toFixed(2)};`)
-  }
-  mat.customProgramCacheKey = () => (full ? 'patient-cloth-full-v1' : 'patient-cloth-v1')
-  return mat
+  return { bodies: [make(male, '', 'male', true)] }
 }
 
 // stof is nooit spierwit: vergeeld, grauw (onder een zaklamp slaat wit anders uit)
-const CLOTHS = [0xb7b2a6, 0xaeada4, 0xa6ada9, 0xbab6ab, 0xa9a394]
-const JACKET = 0xc0bdb3
+const CLOTHS = [0x948e80, 0x8c8a80, 0x868c88, 0x99938a, 0x8a8372]
+const JACKET = 0xa29e92
 
 type Mode = 'idle' | 'walk' | 'notice' | 'hostile' | 'attack' | 'flee' | 'dead'
 
@@ -231,8 +127,21 @@ interface Patient {
   mixer: THREE.AnimationMixer
   actions: Record<keyof Clips, THREE.AnimationAction>
   mats: THREE.Material[]
-  /** gebakken licht op de plek (eigen licht van alle materialen van deze patiënt) */
-  tintColor: THREE.Color
+  /** gedeelde uniforms: eigen licht (gebakken licht op de plek), kogelwonden, rotte plekken */
+  uniforms: PatientUniforms
+  /** voorkant van het hoofd, in de ruimte van het hoofdbot */
+  headForward: THREE.Vector3
+  /** meshes met een 'mouthOpen'-vorm (hoofd, tanden, baard, ogen) voor de onderkaak */
+  jaws: { mesh: THREE.SkinnedMesh; index: number }[]
+  /** mesh waarvan het skelet gebruikt wordt om kogelgaten op het lichaam vast te zetten */
+  refMesh: THREE.SkinnedMesh | null
+  jaw: number
+  /** loopt af tijdens een reeks hongerige happen */
+  bite: number
+  nextBite: number
+  woundIndex: number
+  /** plas bloed onder het lijk al gelegd */
+  pooled: boolean
   bones: Record<'head' | 'neck' | 'armL' | 'foreL' | 'handL' | 'armR' | 'foreR' | 'handR', THREE.Object3D | null>
   jacket: boolean
   pos: THREE.Vector3
@@ -290,27 +199,29 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
       const root = SkeletonUtils.clone(body.gltf.scene) as THREE.Group
       root.rotation.order = 'YXZ'
       const jacket = npc.behavior === 'rocker' || i % 5 === 2
-      const look: Look = {
+      const look: ClothLook = {
         cloth: new THREE.Color(jacket ? JACKET : CLOTHS[i % CLOTHS.length]),
         jacket: jacket ? 1 : 0,
-        blood: i % 3 === 1 ? 0.8 : i % 4 === 0 ? 0.35 : 0,
+        blood: i % 3 === 1 ? 0.8 : i % 4 === 0 ? 0.35 : 0.15,
       }
-      const tintColor = new THREE.Color(1, 1, 1)
+      const uniforms = patientUniforms(i * 7.31, rotSpots(i))
       const mats: THREE.Material[] = []
       const made = new Map<THREE.Material, THREE.Material>()
+      const jaws: { mesh: THREE.SkinnedMesh; index: number }[] = []
+      let refMesh: THREE.SkinnedMesh | null = null
       root.traverse((o) => {
         const m = o as THREE.SkinnedMesh
         if (!m.isSkinnedMesh) return
         const base = m.material as THREE.MeshStandardMaterial
-        // hoed van het mannelijke model hoort niet in een gesticht
-        if (base.name === 'Wolf3D_Headwear') {
+        const paint = paintFor(base.name)
+        // geen hoed, geen baard (die verbergt de bebloede mond)
+        if (paint === 'hide' || paint === 'beard') {
           m.visible = false
           return
         }
         let mat = made.get(base)
         if (!mat) {
-          const cloth = body.kind === 'female' ? true : base.name === 'Wolf3D_Outfit_Top' || base.name === 'Wolf3D_Outfit_Bottom'
-          mat = cloth ? clothMaterial(base, look, tintColor, i * 7.31, body.kind === 'male') : litMaterial(base, tintColor)
+          mat = patientMaterial(base, paint, uniforms, paint === 'cloth' ? look : undefined)
           made.set(base, mat)
           mats.push(mat)
         }
@@ -318,6 +229,9 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
         m.frustumCulled = false
         m.castShadow = true
         m.receiveShadow = true
+        const jaw = m.morphTargetDictionary?.mouthOpen
+        if (jaw !== undefined) jaws.push({ mesh: m, index: jaw })
+        if (base.name === 'Wolf3D_Outfit_Top') refMesh = m
       })
       const s = 0.97 + ((i * 37) % 9) / 100
       root.scale.setScalar(s)
@@ -336,12 +250,16 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
         idle: act(clips.idle, 1, 0.75 + Math.random() * 0.3),
         walk: act(clips.walk, 0, 0.72),
         run: act(clips.run, 0, 1),
-        sad: act(clips.sad, b === 'pacer' ? 0.5 : 0.9),
+        sad: act(clips.sad, b === 'pacer' ? 0.4 : 0.6),
         sneak: act(clips.sneak, b === 'pacer' ? 0.6 : b === 'wander' ? 0.25 : 0),
         shake: act(clips.shake, 0, 1.3),
         nod: act(clips.nod, b === 'rocker' ? 1 : 0, 0.6),
       }
       const bone = (n: string) => root.getObjectByName(`${body.prefix}${n}`) ?? null
+      // voorkant van het hoofd in de ruimte van het hoofdbot (in rust kijkt het model naar +z)
+      root.updateMatrixWorld(true)
+      const headBone = bone('Head')
+      const headForward = headBone ? new THREE.Vector3(0, 0, 1).applyQuaternion(headBone.getWorldQuaternion(new THREE.Quaternion()).invert()) : new THREE.Vector3(0, 0, 1)
       const heading = headingFromYaw(npc.yaw)
       return {
         npc,
@@ -349,7 +267,15 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
         mixer,
         actions,
         mats,
-        tintColor,
+        uniforms,
+        headForward,
+        jaws,
+        refMesh,
+        jaw: 0,
+        bite: 0,
+        nextBite: 2 + Math.random() * 5,
+        woundIndex: 0,
+        pooled: false,
         bones: {
           head: bone('Head'),
           neck: bone('Neck'),
@@ -426,10 +352,52 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
     p.collider = null
   }
 
+  /**
+   * Kogelgat op de plek van de treffer, blijvend op het lichaam: het trefpunt wordt via het
+   * dichtstbijzijnde bot terugvertaald naar de bind-pose, waar de shader de wond tekent.
+   */
+  function addWound(p: Patient, point: THREE.Vector3, amount: number) {
+    const mesh = p.refMesh
+    if (!mesh) return
+    p.root.updateMatrixWorld(true)
+    const bones = mesh.skeleton.bones
+    // bot waarvan het segment (bot → eerste kind) het dichtst bij de treffer ligt
+    let best = 0
+    let bestD = Infinity
+    const a = tmp.a
+    const b = tmp.b
+    const seg = new THREE.Line3()
+    const closest = new THREE.Vector3()
+    bones.forEach((bone, i) => {
+      bone.getWorldPosition(a)
+      const child = bone.children.find((c) => (c as THREE.Bone).isBone)
+      if (child) child.getWorldPosition(b)
+      else b.copy(a)
+      seg.set(a, b).closestPointToPoint(point, true, closest)
+      const d = closest.distanceToSquared(point)
+      if (d < bestD) {
+        bestD = d
+        best = i
+      }
+    })
+    // wereld → (huidige) botruimte → bind-pose van de mesh:  P = Bi · boneInverse⁻¹ · Bw⁻¹ · B · M⁻¹ · H
+    const v = point.clone()
+    v.applyMatrix4(tmp.m1.copy(mesh.matrixWorld).invert())
+    v.applyMatrix4(mesh.bindMatrix)
+    v.applyMatrix4(tmp.m1.copy(bones[best].matrixWorld).invert())
+    v.applyMatrix4(tmp.m1.copy(mesh.skeleton.boneInverses[best]).invert())
+    v.applyMatrix4(mesh.bindMatrixInverse)
+    const w = p.uniforms.uWounds.value[p.woundIndex % MAX_WOUNDS]
+    w.set(v.x, v.y, v.z, THREE.MathUtils.clamp(0.008 + amount * 0.0009, 0.009, 0.022))
+    p.woundIndex++
+    p.uniforms.uWoundCount.value = Math.min(MAX_WOUNDS, p.woundIndex)
+  }
+
   function hurt(p: Patient, amount: number, point: THREE.Vector3, dir: THREE.Vector3) {
     if (p.mode === 'dead') return
     p.hp -= amount
     fx.fleshImpact(point, dir, Math.min(2.5, amount / 8))
+    addWound(p, point, amount)
     p.pos.addScaledVector(tmp.v.set(dir.x, 0, dir.z).normalize(), Math.min(0.2, amount * 0.008))
     p.twitch = 1.4
     if (p.hp <= 0) {
@@ -459,6 +427,7 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
     () => ({
       q: new THREE.Quaternion(),
       q2: new THREE.Quaternion(),
+      m1: new THREE.Matrix4(),
       v: new THREE.Vector3(),
       v2: new THREE.Vector3(),
       a: new THREE.Vector3(),
@@ -676,10 +645,11 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
     p.actions.idle.setEffectiveWeight(Math.max(0, 1 - p.walkWeight - p.runWeight))
     p.actions.walk.setEffectiveTimeScale(hostile ? 1.0 : 0.72)
     p.actions.sneak.setEffectiveWeight(hostile ? 0.7 : p.npc.behavior === 'pacer' ? 0.6 : p.npc.behavior === 'wander' ? 0.25 : 0)
-    p.actions.sad.setEffectiveWeight(hostile || running ? 0.2 : p.npc.behavior === 'pacer' ? 0.5 : 0.9)
+    p.actions.sad.setEffectiveWeight(hostile || running ? 0.2 : p.npc.behavior === 'pacer' ? 0.4 : 0.6)
     p.actions.shake.setEffectiveWeight(p.twitch > 0 ? Math.sin((1 - p.twitch / 1.4) * Math.PI) : 0)
     if (p.npc.behavior === 'rocker') p.actions.nod.setEffectiveWeight(p.mode === 'notice' ? 0.4 : hostile ? 0 : 1)
     p.mixer.update(dt)
+    chew(p, dt, hostile)
 
     const c = level.cells[cellOf(p.pos)]
     if (c && !c.solid) p.pos.y += (c.floor - p.pos.y) * Math.min(1, dt * 10)
@@ -716,10 +686,11 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
       const { q, q2, v, v2 } = tmp
       p.bones.head.getWorldPosition(v)
       v2.set(player.position.x, player.position.y + 1.55, player.position.z).sub(v).normalize()
-      v.set(Math.sin(p.heading), 0, Math.cos(p.heading))
+      // waar het hoofd nu werkelijk heen kijkt (ook als het gebogen hangt), niet de lichaamsrichting
+      v.copy(p.headForward).applyQuaternion(p.bones.head.getWorldQuaternion(tmp.bq)).normalize()
       q.setFromUnitVectors(v, v2)
       const angle = 2 * Math.acos(Math.min(1, Math.abs(q.w)))
-      const k = (angle > 1.2 ? 1.2 / angle : 1) * p.look
+      const k = (angle > 1.4 ? 1.4 / angle : 1) * p.look
       q2.identity().slerp(q, k * 0.4)
       twistBone(p.bones.neck, q2)
       q2.identity().slerp(q, k * 0.6)
@@ -738,7 +709,41 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
     const fall = k * k * 1.5
     p.root.position.set(p.pos.x, p.pos.y - k * 0.08, p.pos.z)
     p.root.rotation.set(-fall, p.heading, 0)
+    // plas bloed onder het lichaam zodra het ligt
+    if (!p.pooled && k >= 1) {
+      p.pooled = true
+      const c = level.cells[cellOf(p.pos)]
+      const back = tmp.v.set(-Math.sin(p.heading), 0, -Math.cos(p.heading)).multiplyScalar(0.7)
+      blood.splat(new THREE.Vector3(p.pos.x + back.x, (c?.floor ?? p.pos.y) + 0.004, p.pos.z + back.z), new THREE.Vector3(0, 1, 0), 1.3)
+    }
+    jawPose(p, 0.55)
     tint(p, dt)
+  }
+
+  /** Onderkaak: hangt slap open, met af en toe een reeks hongerige happen. */
+  function chew(p: Patient, dt: number, hostile: boolean) {
+    p.nextBite -= dt
+    if (p.nextBite <= 0 && p.bite <= 0) {
+      const notice = p.mode === 'notice'
+      p.nextBite = hostile ? 1.2 + Math.random() * 1.8 : notice ? 2.5 + Math.random() * 3 : 5 + Math.random() * 8
+      p.bite = 0.75
+      if (hostile || (notice && Math.random() < 0.7)) sfx.chomp(p.pos)
+    }
+    let open = 0.32 + Math.sin(performance.now() / 900 + p.npc.variant) * 0.08
+    if (p.bite > 0) {
+      p.bite -= dt
+      // twee, drie snelle happen: wijd open, hard dicht
+      const t = (0.75 - p.bite) / 0.25
+      const phase = t - Math.floor(t)
+      open = phase < 0.45 ? 0.2 + (phase / 0.45) * 0.85 : 1.05 - ((phase - 0.45) / 0.55) * 1.05
+    }
+    if (p.mode === 'attack') open = p.attackT < STRIKE_AT ? Math.min(1.1, 0.3 + p.attackT * 2) : 0
+    jawPose(p, open)
+  }
+
+  function jawPose(p: Patient, open: number) {
+    p.jaw += (open - p.jaw) * 0.5
+    for (const j of p.jaws) if (j.mesh.morphTargetInfluences) j.mesh.morphTargetInfluences[j.index] = p.jaw
   }
 
   function tint(p: Patient, dt: number) {
@@ -746,7 +751,7 @@ export function Patients({ level, lighting }: { level: Level; lighting: Lighting
     if (p.lightTimer > 0) return
     p.lightTimer = 0.25
     lighting.sample(p.pos.x, p.pos.y + 1.5, p.pos.z, undefined, p.light)
-    p.tintColor.setRGB(Math.min(1.5, 0.1 + p.light[0]), Math.min(1.5, 0.1 + p.light[1]), Math.min(1.5, 0.1 + p.light[2]))
+    p.uniforms.uTint.value.setRGB(Math.min(1.5, 0.1 + p.light[0]), Math.min(1.5, 0.1 + p.light[1]), Math.min(1.5, 0.1 + p.light[2]))
   }
 
   /**
